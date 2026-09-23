@@ -33,10 +33,10 @@ class EstimateParasitics;
 namespace dpl {
 class Opendp;
 }
-namespace gui {
+namespace web {
 class HeatMapSourceRegistration;
 using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
-}  // namespace gui
+}  // namespace web
 
 namespace psm {
 class IRDropDataSource;
@@ -136,6 +136,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   void inDbSWireAddSBox(odb::dbSBox*) override;
   void inDbSWireRemoveSBox(odb::dbSBox*) override;
   void inDbSWirePostDestroySBoxes(odb::dbSWire*) override;
+  void inDbFillCreate(odb::dbFill*) override;
 
   void getIRDropForLayer(odb::dbNet* net,
                          odb::dbTechLayer* layer,
@@ -176,7 +177,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
-  gui::HeatMapSourceHandle heatmap_source_;
+  web::HeatMapSourceHandle heatmap_source_;
 
   bool debug_gui_enabled_ = false;
 

@@ -48,6 +48,8 @@ struct Pixel
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
   uint8_t blocked_layers = 0;
+  // Routing levels holding power via or patch metal outside the stripes
+  uint8_t blocked_pin_layers = 0;
   // Cell that reserved this pixel for padding
   Node* padding_reserved_by = nullptr;
 
@@ -89,6 +91,7 @@ class Grid
   std::unordered_set<int> getRowCoordinates() const;
 
   GridX gridX(DbuX x) const;
+  GridX gridRoundX(DbuX x) const;
   GridX gridEndX(DbuX x) const;
 
   GridX gridX(const Node* cell) const;
