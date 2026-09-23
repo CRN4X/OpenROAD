@@ -18,7 +18,9 @@ target_sources(psm
     pdnsim.cpp
     heatMap.cpp
     ir_solver.cpp
+    ir_solver_3d.cpp
     ir_network.cpp
+    ir_network_3d.cpp
     connection.cpp
     shape.cpp
     node.cpp

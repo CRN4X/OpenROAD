@@ -1,0 +1,37 @@
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 2000
+  include:
+    - 3dic_backside_tsv.3dbv
+
+Design:
+  name: "backside_tsv_top"
+  external:
+    verilog_file: "3dic_backside_tsv_top.v"
+
+ChipletInst:
+  chipA:
+    reference: backside_tsv_chip_a
+  chipB:
+    reference: backside_tsv_chip_b
+
+Stack:
+  chipA:
+    loc: [0.0, 0.0]
+    z: 0.0
+    orient: R0
+  chipB:
+    loc: [0.0, 0.0]
+    z: 300.0
+    orient: MZ
+
+Connection:
+  # Chip A and Chip B are bonded front-to-front.
+  bond_a_to_b:
+    top: chipB.regions.front_reg
+    bot: chipA.regions.front_reg
+  # Chip A's backside is the package-facing power-entry surface.
+  package_to_a_backside:
+    top: chipA.regions.back_reg
+    bot: ~

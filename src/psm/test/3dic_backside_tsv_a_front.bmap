@@ -1,0 +1,3 @@
+# bumpInstName bumpCellType x(um) y(um) portName netName
+bump_vdd_front BUMP_FRONT 4.225 10.0 VDD_FRONT VDD
+bump_vss_front BUMP_FRONT 4.775 10.0 VSS_FRONT VSS

@@ -1,0 +1,57 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN backside_tsv_chip_a ;
+
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+# The bridge is at (4 um, 2 um). Its VDD/VSS pins touch both B1 and M1.
+COMPONENTS 1 ;
+  - tsv_bridge TSV_BRIDGE + FIXED ( 8000 4000 ) N ;
+END COMPONENTS
+
+PINS 4 ;
+  - VDD_FRONT + NET VDD + DIRECTION INOUT + USE POWER
+    + LAYER M1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 8450 20000 ) N ;
+  - VSS_FRONT + NET VSS + DIRECTION INOUT + USE GROUND
+    + LAYER M1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 9550 20000 ) N ;
+  - VDD_BACK + NET VDD + DIRECTION INOUT + USE POWER
+    + LAYER B1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 20000 7750 ) N ;
+  - VSS_BACK + NET VSS + DIRECTION INOUT + USE GROUND
+    + LAYER B1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 20000 4250 ) N ;
+END PINS
+
+# B1 is Chip A's backside PDN. M1 is its frontside PDN. The two grids only
+# cross electrically through the TSV_BRIDGE instance.
+SPECIALNETS 2 ;
+  - VDD
+    ( PIN VDD_FRONT )
+    ( PIN VDD_BACK )
+    ( tsv_bridge VDD )
+    + USE POWER
+    + ROUTED B1 500
+      ( 0 7750 ) ( 40000 * )
+      NEW M1 500
+      ( 8450 0 ) ( * 40000 )
+    ;
+  - VSS
+    ( PIN VSS_FRONT )
+    ( PIN VSS_BACK )
+    ( tsv_bridge VSS )
+    + USE GROUND
+    + ROUTED B1 500
+      ( 0 4250 ) ( 40000 * )
+      NEW M1 500
+      ( 9550 0 ) ( * 40000 )
+    ;
+END SPECIALNETS
+
+NETS 0 ;
+END NETS
+
+END DESIGN

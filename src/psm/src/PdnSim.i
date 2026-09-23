@@ -90,54 +90,10 @@ check_3d_power_grid_cmd(const char* chip_net_name)
 }
 
 bool
-check_3d_g_matrix_cmd(const char* chip_net_name, bool require_tsv)
+check_3d_g_matrix_cmd(const char* chip_net_name)
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->check3DGMatrix(chip_net_name, require_tsv);
-}
-
-void
-add_3d_pdn_current_cmd(const char* chip_net_name,
-                       const char* chip_name,
-                       const char* port_name,
-                       double current)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->add3DPDNCurrent(chip_net_name, chip_name, port_name, current);
-}
-
-bool
-check_3d_j_vector_cmd(const char* chip_net_name)
-{
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->check3DJVector(chip_net_name);
-}
-
-void
-set_3d_pdn_voltage_source_cmd(const char* chip_net_name,
-                              const char* chip_name,
-                              const char* port_name,
-                              double voltage)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->set3DPDNVoltageSource(
-      chip_net_name, chip_name, port_name, voltage);
-}
-
-bool
-solve_3d_power_grid_cmd(const char* chip_net_name)
-{
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->solve3DPowerGrid(chip_net_name);
-}
-
-double
-get_3d_pdn_voltage_cmd(const char* chip_net_name,
-                       const char* chip_name,
-                       const char* port_name)
-{
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->get3DPDNVoltage(chip_net_name, chip_name, port_name);
+  return pdnsim->check3DGMatrix(chip_net_name);
 }
 
 void

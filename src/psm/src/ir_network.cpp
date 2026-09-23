@@ -42,6 +42,8 @@ IRNetwork::IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning)
   construct();
 }
 
+IRNetwork::~IRNetwork() = default;
+
 void IRNetwork::initMinimumNodePitch()
 {
   min_node_pitch_.clear();
@@ -1320,6 +1322,16 @@ bool IRNetwork::belongsTo(Connection* connection) const
                                 return other.get() == connection;
                               })
          != connections_.end();
+}
+
+BPinNode* IRNetwork::findBTermNode(odb::dbBTerm* bterm) const
+{
+  for (const auto& node : bpin_nodes_) {
+    if (node->getBPin()->getBTerm() == bterm) {
+      return node.get();
+    }
+  }
+  return nullptr;
 }
 
 std::size_t IRNetwork::getNodeCount(bool include_iterms) const

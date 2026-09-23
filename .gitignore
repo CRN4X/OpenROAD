@@ -39,6 +39,7 @@ MessagesFinal.md
 
 .idea/
 cmake-build-debug/
+/build-3dbv/
 debug/
 
 coverage-output

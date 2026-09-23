@@ -817,6 +817,37 @@ proc repair_pdn_vias { args } {
   pdn::repair_pdn_vias $nets
 }
 
+sta::define_cmd_args "add_3d_pdn_connection" {
+  -net chip_net
+  -source_chip chiplet
+  -source_port port
+  -target_chip chiplet
+  -target_port port
+  -resistance resistance
+}
+
+proc add_3d_pdn_connection { args } {
+  sta::parse_key_args "add_3d_pdn_connection" args \
+    keys {-net -source_chip -source_port -target_chip -target_port -resistance} \
+    flags {}
+  sta::check_argc_eq0 "add_3d_pdn_connection" $args
+
+  foreach key {-net -source_chip -source_port -target_chip -target_port -resistance} {
+    if { ![info exists keys($key)] } {
+      utl::error PDN 250 "Missing mandatory argument $key."
+    }
+  }
+  sta::check_positive_float "-resistance" $keys(-resistance)
+
+  return [pdn::add_3d_pdn_connection_cmd \
+    $keys(-net) \
+    $keys(-source_chip) \
+    $keys(-source_port) \
+    $keys(-target_chip) \
+    $keys(-target_port) \
+    $keys(-resistance)]
+}
+
 namespace eval pdn {
 proc name_cmp { obj1 obj2 } {
   set name1 [$obj1 getName]

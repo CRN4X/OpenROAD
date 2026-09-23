@@ -64,6 +64,7 @@ class IRNetwork
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning);
+  ~IRNetwork();
 
   odb::dbNet* getNet() const { return net_; };
 
@@ -94,6 +95,7 @@ class IRNetwork
   {
     return bpin_nodes_;
   }
+  BPinNode* findBTermNode(odb::dbBTerm* bterm) const;
   Node::NodeSet getBPinShapeNodes() const;
 
   odb::dbTechLayer* getTopLayer() const;

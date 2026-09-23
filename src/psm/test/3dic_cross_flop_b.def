@@ -1,0 +1,68 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN flop_chip_b ;
+# DEF coordinates are stored in database units (DBU).
+# With 2000 DBU per micron: 10000 DBU = 5 um, 30000 DBU = 15 um,
+# and 40000 DBU = 20 um.
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+COMPONENTS 3 ;
+    - buf BUF_X1 + PLACED ( 5000 10000 ) N ;
+    - inv INV_X1 + PLACED ( 15000 10000 ) N ;
+    - ff DFF_X1 + PLACED ( 25000 10000 ) N ;
+END COMPONENTS
+
+PINS 5 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 0 5000 ) N ;
+    - d + NET d + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 0 15000 ) N ;
+    - q + NET q + DIRECTION OUTPUT + USE SIGNAL
+      + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 40000 15000 ) N ;
+# VDD is at (10000, 10000) DBU = (5 um, 5 um).
+# It is the power boundary terminal (dbBTerm) used by bump_vdd in the BMAP.
+    - VDD + NET VDD + DIRECTION INOUT + USE POWER
+      + LAYER metal1 ( -500 -500 ) ( 500 500 )
+      + PLACED ( 10000 10000 ) N ;
+# VSS is at (30000, 10000) DBU = (15 um, 5 um).
+# It is the ground boundary terminal (dbBTerm) used by bump_vss in the BMAP.
+    - VSS + NET VSS + DIRECTION INOUT + USE GROUND
+      + LAYER metal1 ( -500 -500 ) ( 500 500 )
+      + PLACED ( 30000 10000 ) N ;
+END PINS
+
+# These SPECIALNETS are the chiplet's small example PDN.
+# ROUTED width 1000 DBU = 0.5 um.
+SPECIALNETS 2 ;
+  - VDD
+    ( PIN VDD )
+    ( * VDD )
+    + USE POWER
+# Both endpoints have x = 10000 DBU (5 um), so this is a vertical VDD stripe.
+# It runs from y = 5 um to y = 20 um.
+    + ROUTED metal1 1000
+      ( 10000 10000 ) ( 10000 40000 )
+    ;
+
+  - VSS
+    ( PIN VSS )
+    ( * VSS )
+    + USE GROUND
+# Both endpoints have x = 30000 DBU (15 um), so this is a vertical VSS stripe.
+# It runs from y = 5 um to y = 20 um.
+    + ROUTED metal1 1000
+      ( 30000 10000 ) ( 30000 40000 )
+    ;
+END SPECIALNETS
+
+NETS 5 ;
+    - clk ( PIN clk ) ( ff CK ) + USE SIGNAL ;
+    - d ( PIN d ) ( ff D ) + USE SIGNAL ;
+    - n1 ( ff Q ) ( inv A ) + USE SIGNAL ;
+    - n2 ( inv ZN ) ( buf A ) + USE SIGNAL ;
+    - q ( PIN q ) ( buf Z ) + USE SIGNAL ;
+END NETS
+
+END DESIGN
