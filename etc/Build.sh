@@ -291,7 +291,7 @@ if [[ "$OSTYPE" == "darwin"* && "$useBazel" == "no" ]]; then
         exit 1
     fi
     
-    cmakeOptions+=" -DQt5_DIR=$_qt5/lib/cmake/Qt5"
+    cmakeOptions+=("-DQt5_DIR=$_qt5/lib/cmake/Qt5")
 
     _tcl8=$(brew --prefix tcl-tk@8 2>/dev/null || true)     
     if [[ -z "$_tcl8" || ! -d "$_tcl8/lib" || ! -d "$_tcl8/include" ]]; then
@@ -299,12 +299,12 @@ if [[ "$OSTYPE" == "darwin"* && "$useBazel" == "no" ]]; then
         exit 1
     fi
     
-    cmakeOptions+=" -DTCL_LIBRARY=$_tcl8/lib/libtcl8.6.dylib"
+    cmakeOptions+=("-DTCL_LIBRARY=$_tcl8/lib/libtcl8.6.dylib")
 
-    cmakeOptions+=" -DTCL_INCLUDE_PATH=$_tcl8/include"
-    cmakeOptions+=" -DFLEX_INCLUDE_DIR=$_flex/include"
+    cmakeOptions+=("-DTCL_INCLUDE_PATH=$_tcl8/include")
+    cmakeOptions+=("-DFLEX_INCLUDE_DIR=$_flex/include")
 
-    cmakeOptions+=" -DCMAKE_CXX_FLAGS=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED"
+    cmakeOptions+=("-DCMAKE_CXX_FLAGS=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED")
 
     _icu="$(brew --prefix icu4c 2>/dev/null || true)"
     if [[ -z "$_icu" || ! -d "$_icu/lib" ]]; then
