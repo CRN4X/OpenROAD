@@ -1,6 +1,6 @@
 # THis test checks the connectivity of the PDN
-# So we will be using the check_power_grid command 
-# with required args -net VDD and 
+# So we will be using the check_power_grid command
+# with required args -net VDD and
 # we alo pass in the optional parameter -floorplanning
 # so that any movable cell does not blokc the PDN geometry check
 
@@ -15,7 +15,7 @@ source helpers.tcl
 
 
 # Now load the Tech LEF file
-# THe lef file helps us provide techincal and physical information - 
+# THe lef file helps us provide techincal and physical information -
 # routing layers, via definitions, cell pins, cell geometry
 # LEF = reusable physical definitions/metadata
 read_lef Nangate45/Nangate45.lef
