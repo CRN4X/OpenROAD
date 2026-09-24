@@ -23,19 +23,7 @@ jobs:
           ./etc/DependencyInstaller.sh -base
       - name: Build OpenROAD
         run: |
-          export PATH="$(brew --prefix bison)/bin:$PATH"
-          export PATH="$(brew --prefix flex)/bin:$PATH"
-          export PATH="$(brew --prefix tcl-tk)/bin:$PATH"
-          export CMAKE_PREFIX_PATH="$(brew --prefix or-tools)"
-          export PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig"
-          export MY_QT_PATH=$(find /usr/local/Cellar/qt@5/ -type d -iwholename "*cmake/Qt5")
-          echo "MY_QT_PATH = $MY_QT_PATH"
-          mkdir build
-          cd build
-          cmake ..  -D TCL_LIB_PATHS=/usr/local/opt/tcl-tk/lib \
-                    -D TCL_NO_DEFAULT_PATH=TRUE \
-                    -D Qt5_DIR=${MY_QT_PATH}
-          make -j 12
+          ./etc/Build.sh -cmake-build -threads=12
 
   build-self-hosted:
     if: github.repository_owner == 'The-OpenROAD-Project' || github.repository_owner == 'The-OpenROAD-Project-private' || github.repository_owner == 'The-OpenROAD-Project-staging'
