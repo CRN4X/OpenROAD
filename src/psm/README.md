@@ -78,8 +78,9 @@ Build each chiplet's PSM `IRNetwork`, read the inter-die `dbChipRSeg` objects
 from ODB, and stitch the chiplet networks with fixed-resistance connections.
 OpenRCX can populate these objects from assembly extraction rules; tests may
 instead create them with a fixed synthetic resistance.
-This command validates graph construction; it does not yet solve a 3D G
-matrix.
+This command checks that all nodes in the combined network are connected,
+including isolated metal and terminals. It reports disconnected sections
+inside a chiplet or across chiplets without building or solving a G matrix.
 
 ```tcl
 check_3d_power_grid
@@ -96,7 +97,7 @@ check_3d_power_grid
 
 Build one combined conductance matrix from all on-chip PDN connections and
 inter-die `dbChipRSeg` connections for a top-level power or ground
-`dbChipNet`. This command validates matrix construction; it does not add
+`dbChipNet`. This command validates connectivity and matrix construction; it does not add
 voltage sources, build a current vector, or solve for node voltages.
 
 ```tcl

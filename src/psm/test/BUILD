@@ -57,6 +57,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "3dic_backside_tsv_connectivity",
     "3dic_backside_tsv_disconnected",
     "3dic_backside_tsv_gmatrix",
     "3dic_backside_tsv_invalid_resistance",
@@ -224,6 +225,7 @@ CROSS_3D_RESOURCES = [
 ]
 
 THREED_TEST_RESOURCES = {
+    "3dic_backside_tsv_connectivity": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_disconnected": BACKSIDE_TSV_BROKEN_RESOURCES,
     "3dic_backside_tsv_gmatrix": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_invalid_resistance": BACKSIDE_TSV_RESOURCES,
@@ -253,6 +255,8 @@ THREED_TEST_RESOURCES = {
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],

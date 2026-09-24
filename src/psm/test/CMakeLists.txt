@@ -48,6 +48,7 @@ or_integration_tests(
     zerosoc_pads_check_only
     zerosoc_pads_check_only_disconnected
   PASSFAIL_TESTS
+    3dic_backside_tsv_connectivity
     3dic_backside_tsv_disconnected
     3dic_backside_tsv_gmatrix
     3dic_backside_tsv_invalid_resistance

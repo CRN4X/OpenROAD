@@ -39,7 +39,7 @@ SPECIALNETS 2 ;
     ( PIN VDD )
     ( * VDD )
     + USE POWER
-    + ROUTED metal5 1000
+    + ROUTED metal5 1000     # this the width of the vdd pdn strap
       ( 0 12800 ) ( 40000 * )
       NEW metal4 0 ( 5570 12800 ) via4_0
       NEW metal3 0 ( 5570 12800 ) via3_0

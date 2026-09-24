@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <memory>
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "ir_network.h"
@@ -83,6 +86,39 @@ void IRNetwork3D::construct()
   }
 }
 
+bool IRNetwork3D::isConnected() const
+{
+  const Nodes nodes = getNodes();
+  if (nodes.empty()) {
+    return false;
+  }
+
+  std::unordered_map<Node*, std::vector<Node*>> adjacency;
+  for (Connection* connection : getConnections()) {
+    Node* node0 = connection->getNode0();
+    Node* node1 = connection->getNode1();
+    adjacency[node0].push_back(node1);
+    adjacency[node1].push_back(node0);
+  }
+
+  // Visit across both chiplet-local edges and inter-die connections.
+  std::unordered_set<Node*> visited;
+  std::queue<Node*> pending;
+  Node* start = *nodes.begin();
+  visited.insert(start);
+  pending.push(start);
+  while (!pending.empty()) {
+    Node* node = pending.front();
+    pending.pop();
+    for (Node* neighbor : adjacency[node]) {
+      if (visited.insert(neighbor).second) {
+        pending.push(neighbor);
+      }
+    }
+  }
+  return visited.size() == nodes.size();
+}
+
 IRNetwork3D::ChipletNetwork* IRNetwork3D::findNetwork(
     odb::dbChipBumpInst* bump_inst)
 {
@@ -158,9 +194,19 @@ std::size_t IRNetwork3D::getBacksideBridgeConnectionCount() const
 IRNetwork3D::Nodes IRNetwork3D::getNodes() const
 {
   Nodes nodes;
-  for (Connection* connection : getConnections()) {
-    nodes.insert(connection->getNode0());
-    nodes.insert(connection->getNode1());
+  // Include isolated nodes too: collecting only edge endpoints hides opens.
+  for (const ChipletNetwork& chiplet : networks_) {
+    for (const auto& [layer, layer_nodes] : chiplet.network->getNodes()) {
+      for (const auto& node : layer_nodes) {
+        nodes.insert(node.get());
+      }
+    }
+    for (const auto& node : chiplet.network->getITermNodes()) {
+      nodes.insert(node.get());
+    }
+    for (const auto& node : chiplet.network->getBPinNodes()) {
+      nodes.insert(node.get());
+    }
   }
   return nodes;
 }

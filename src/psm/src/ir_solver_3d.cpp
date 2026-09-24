@@ -196,34 +196,7 @@ bool IRSolver3D::buildSourceMap(std::map<std::size_t, Voltage>& sources) const
 
 bool IRSolver3D::isConnected() const
 {
-  if (node_index_.empty()) {
-    return false;
-  }
-
-  std::map<Node*, std::vector<Node*>> adjacency;
-  for (Connection* connection : network_->getConnections()) {
-    Node* node0 = connection->getNode0();
-    Node* node1 = connection->getNode1();
-    adjacency[node0].push_back(node1);
-    adjacency[node1].push_back(node0);
-  }
-
-  std::set<Node*> visited;
-  std::queue<Node*> pending;
-  pending.push(node_index_.begin()->first);
-  while (!pending.empty()) {
-    Node* node = pending.front();
-    pending.pop();
-    if (!visited.insert(node).second) {
-      continue;
-    }
-    for (Node* neighbor : adjacency[node]) {
-      if (!visited.contains(neighbor)) {
-        pending.push(neighbor);
-      }
-    }
-  }
-  return visited.size() == node_index_.size();
+  return network_->isConnected();
 }
 
 bool IRSolver3D::sourcesCoverAllComponents() const

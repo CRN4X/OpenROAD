@@ -32,6 +32,7 @@ class IRNetwork3D
   ~IRNetwork3D();
 
   void construct();
+  bool isConnected() const;
 
   odb::dbChipNet* getChipNet() const { return chip_net_; }
   std::size_t getChipletNetworkCount() const { return networks_.size(); }

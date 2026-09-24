@@ -8,17 +8,24 @@ END UNITS
 
 # Compact metal5 bump for the 20 um x 20 um synthetic chiplets. The generic
 # Nangate45 fake bump is 29 um wide and obscures the entire test in the GUI.
-MACRO BUMP
-  CLASS COVER BUMP ;
-  ORIGIN 0 0 ;
-  SIZE 0.500 BY 0.500 ;
-  SYMMETRY X Y ;
-  PIN PAD
+# Defines a small 0.5 µm bump on metal5.
+
+
+# power bumps connect the two chiplets (could be tsv also)
+
+MACRO BUMP   # Define a cell type named BUMP
+  CLASS COVER BUMP ;  # Identify it as a physical bump cell
+  ORIGIN 0 0 ;  # Set the template’s local coordinate origin. This does not place it on the chip.
+  SIZE 0.500 BY 0.500 ;  # Make its footprint 0.5 µm × 0.5 µm and no height to the bumps
+  SYMMETRY X Y ;  #  Allow the cell to be mirrored.
+  PIN PAD  # give bump 1 electrical pin named pad
     DIRECTION INOUT ;
     USE SIGNAL ;
     PORT
       LAYER metal5 ;
-        RECT 0.000 0.000 0.500 0.500 ;
+        RECT 0.000 0.000 0.500 0.500 ; # Define the pin’s actual metal shape: a 0.5 µm square on metal5, covering the whole footprint.
+        # RECT  x_left  y_bottom  x_right  y_top ;
+        # RECT  0.000   0.000     0.500    0.500 ;
     END
   END PAD
 END BUMP

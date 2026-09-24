@@ -183,6 +183,13 @@ bool PDNSim::check3DPowerGrid(const std::string& chip_net_name)
                    network->getInterDieConnectionCount());
   }
 
+  if (!network->isConnected()) {
+    logger_->error(utl::PSM,
+                   140,
+                   "The 3D power grid for {} is disconnected.",
+                   chip_net_name);
+  }
+
   logger_->info(utl::PSM,
                 104,
                 "Built 3D power grid {}: {} chiplet PDNs, {} nodes, and {} "
