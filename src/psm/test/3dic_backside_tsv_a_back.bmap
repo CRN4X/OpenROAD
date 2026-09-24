@@ -1,0 +1,5 @@
+# These package-facing bumps land directly on Chip A's backside B1 rails.
+# bumpInstName bumpCellType x(um) y(um) portName netName
+bump_vdd_back BUMP_BACK 10.0 3.875 VDD_BACK VDD
+bump_vss_back BUMP_BACK 10.0 2.125 VSS_BACK VSS
+

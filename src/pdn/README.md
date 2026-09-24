@@ -42,6 +42,36 @@ pdngen
 | `[-ripup]` | Ripup the existing power grid, as specified by the voltage domains. |
 | `[-skip_trim]` | Skip the metal trim step, which attempts to remove metal stubs. |
 
+### Add 3D PDN Connection
+
+Test/development helper that creates a fixed-resistance inter-die connection
+between two chiplet bump ports. It creates or reuses the endpoint
+`dbChipCapNode` objects and stores the resistor as a `dbChipRSeg` on the named
+`dbChipNet`. Production flows should instead use OpenRCX assembly extraction
+rules to populate these ODB objects.
+
+```tcl
+add_3d_pdn_connection
+    -net chip_net
+    -source_chip chiplet
+    -source_port port
+    -target_chip chiplet
+    -target_port port
+    -resistance resistance
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level `dbChipNet`, such as VDD or VSS. |
+| `-source_chip` | Source chiplet instance name. |
+| `-source_port` | Source chiplet bump-port name. |
+| `-target_chip` | Target chiplet instance name. |
+| `-target_port` | Target chiplet bump-port name. |
+| `-resistance` | Positive inter-die resistance in ohms. |
+
+
 ### Define Voltage Domain
 
 Defines a named voltage domain with the names of the power and ground nets for a region.

@@ -1,0 +1,20 @@
+# BMAP format: bumpInstName bumpCellType x y portName netName
+# Unlike DEF, BMAP x/y coordinates are written directly in microns.
+# portName is the chiplet boundary terminal (dbBTerm).
+# netName is the chiplet's internal dbNet.
+
+
+bump_clk BUMP 15.0 17.0 clk clk
+bump_d BUMP 19.0 19.0 d d
+bump_q BUMP 19.0 17.0 q q
+
+
+# Place the VDD bump on the metal5 VDD rail at (7 um, 6.4 um).
+# VDD appears twice because the port and net are different objects with the same name.
+bump_vdd BUMP 7.0 6.4 VDD VDD
+
+
+# Place the VSS bump at (15 um, 5 um) and connect VSS dbBTerm to VSS dbNet.
+# VSS appears twice because the port and net are different objects with the same name.
+bump_vss BUMP 18.0 5.0 VSS VSS
+

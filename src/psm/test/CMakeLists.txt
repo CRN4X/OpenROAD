@@ -47,5 +47,17 @@ or_integration_tests(
     zerosoc_pads
     zerosoc_pads_check_only
     zerosoc_pads_check_only_disconnected
+  PASSFAIL_TESTS
+    3dic_backside_tsv_connectivity
+    3dic_backside_tsv_disconnected
+    3dic_backside_tsv_gmatrix
+    3dic_backside_tsv_invalid_resistance
+    3dic_backside_tsv_jvector
+    3dic_backside_tsv_missing_source
+    3dic_backside_tsv_singular
+    3dic_backside_tsv_solve
+    3dic_cross_gmatrix
+    3dic_cross_rcx_gmatrix
+    3dic_cross_rseg
 )
 

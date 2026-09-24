@@ -1,0 +1,61 @@
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  backside_tsv_chip_a:
+    type: die
+    design_area: [20, 20]
+    shrink: 1
+    # This declares that Chip A contains TSV technology. The TSV_BRIDGE
+    # physical cell in its DEF supplies the electrical B1-to-M1 connection.
+    tsv: true
+    thickness: 300
+    offset: [0, 0]
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_backside_tsv_a_front.bmap
+        layer: M1
+      back_reg:
+        side: back
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_backside_tsv_a_back.bmap
+        layer: B1
+    external:
+      APR_tech_file: [3dic_backside_tsv_tech.lef]
+      LEF_file: [3dic_backside_tsv_cells.lef]
+      DEF_file: 3dic_backside_tsv_a.def
+
+  backside_tsv_chip_b:
+    type: die
+    design_area: [20, 20]
+    shrink: 1
+    tsv: false
+    thickness: 300
+    offset: [0, 0]
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_backside_tsv_b_front.bmap
+        layer: M1
+    external:
+      APR_tech_file: [3dic_backside_tsv_tech.lef]
+      LEF_file: [3dic_backside_tsv_cells.lef]
+      DEF_file: 3dic_backside_tsv_b.def
+

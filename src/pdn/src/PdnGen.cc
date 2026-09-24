@@ -62,6 +62,131 @@ void PdnGen::resetShapes()
   updateRenderer(true);
 }
 
+odb::dbChipRSeg* PdnGen::createInterDieConnection(
+    const std::string& chip_net_name,
+    const std::string& source_chip_name,
+    const std::string& source_port_name,
+    const std::string& target_chip_name,
+    const std::string& target_port_name,
+    float resistance)
+{
+  if (resistance <= 0.0) {
+    logger_->error(utl::PDN, 242, "Inter-die resistance must be positive.");
+  }
+
+  odb::dbChip* top_chip = db_->getChip();
+  if (top_chip == nullptr) {
+    logger_->error(utl::PDN, 243, "No top-level dbChip is loaded.");
+  }
+
+  odb::dbChipNet* chip_net = nullptr;
+  for (odb::dbChipNet* candidate : top_chip->getChipNets()) {
+    if (candidate->getName() == chip_net_name) {
+      chip_net = candidate;
+      break;
+    }
+  }
+  if (chip_net == nullptr) {
+    logger_->error(utl::PDN, 244, "Cannot find dbChipNet {}.", chip_net_name);
+  }
+
+  auto find_bump = [&](const std::string& chip_name,
+                       const std::string& port_name) {
+    odb::dbChipBumpInst* match = nullptr;
+    for (uint32_t index = 0; index < chip_net->getNumBumpInsts(); index++) {
+      std::vector<odb::dbChipInst*> path;
+      odb::dbChipBumpInst* bump_inst = chip_net->getBumpInst(index, path);
+      if (bump_inst == nullptr || path.empty()
+          || path.back()->getName() != chip_name) {
+        continue;
+      }
+
+      odb::dbBTerm* bterm = bump_inst->getChipBump()->getBTerm();
+      if (bterm == nullptr || bterm->getName() != port_name) {
+        continue;
+      }
+
+      if (match != nullptr) {
+        logger_->error(utl::PDN,
+                       245,
+                       "More than one bump matches {}.{} on dbChipNet {}.",
+                       chip_name,
+                       port_name,
+                       chip_net_name);
+      }
+      match = bump_inst;
+    }
+
+    if (match == nullptr) {
+      logger_->error(utl::PDN,
+                     246,
+                     "Cannot find bump {}.{} on dbChipNet {}.",
+                     chip_name,
+                     port_name,
+                     chip_net_name);
+    }
+    return match;
+  };
+
+  odb::dbChipBumpInst* source_bump
+      = find_bump(source_chip_name, source_port_name);
+  odb::dbChipBumpInst* target_bump
+      = find_bump(target_chip_name, target_port_name);
+  if (source_bump == target_bump) {
+    logger_->error(utl::PDN, 247, "An inter-die resistor needs two bumps.");
+  }
+  if (source_bump->getChipRegionInst()->getChipInst()
+      == target_bump->getChipRegionInst()->getChipInst()) {
+    logger_->error(utl::PDN,
+                   251,
+                   "An inter-die resistor must connect different chiplets.");
+  }
+
+  for (odb::dbChipRSeg* rseg : chip_net->getChipRSegs()) {
+    odb::dbChipBumpInst* existing_source
+        = rseg->getSourceCapNode()->getChipBumpInst();
+    odb::dbChipBumpInst* existing_target
+        = rseg->getTargetCapNode()->getChipBumpInst();
+    if ((existing_source == source_bump && existing_target == target_bump)
+        || (existing_source == target_bump && existing_target == source_bump)) {
+      logger_->error(utl::PDN,
+                     248,
+                     "A dbChipRSeg already connects {}.{} and {}.{}.",
+                     source_chip_name,
+                     source_port_name,
+                     target_chip_name,
+                     target_port_name);
+    }
+  }
+
+  auto get_cap_node = [&](odb::dbChipBumpInst* bump) {
+    odb::dbChipCapNode* match = nullptr;
+    for (odb::dbChipCapNode* cap_node : chip_net->getChipCapNodes()) {
+      if (cap_node->getChipBumpInst() != bump) {
+        continue;
+      }
+      if (match != nullptr) {
+        logger_->error(utl::PDN,
+                       249,
+                       "A bump on dbChipNet {} has multiple cap nodes.",
+                       chip_net_name);
+      }
+      match = cap_node;
+    }
+    if (match == nullptr) {
+      match = odb::dbChipCapNode::create(chip_net);
+      match->setCapacitance(0.0);
+      match->setChipBumpInst(bump);
+    }
+    return match;
+  };
+
+  odb::dbChipRSeg* rseg = odb::dbChipRSeg::create(
+      chip_net, get_cap_node(source_bump), get_cap_node(target_bump));
+  rseg->setResistance(resistance);
+  return rseg;
+}
+
 void PdnGen::buildGrids(bool trim)
 {
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - begin");

@@ -1,0 +1,48 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN backside_tsv_chip_b ;
+
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+COMPONENTS 0 ;
+END COMPONENTS
+
+# VDD_ISLAND belongs to the VDD net, but its stripe at x=15 um does not touch
+# the package-connected VDD stripe at x=4.225 um.
+PINS 3 ;
+  - VDD + NET VDD + DIRECTION INOUT + USE POWER
+    + LAYER M1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 8450 20000 ) N ;
+  - VDD_ISLAND + NET VDD + DIRECTION INOUT + USE POWER
+    + LAYER M1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 30000 20000 ) N ;
+  - VSS + NET VSS + DIRECTION INOUT + USE GROUND
+    + LAYER M1 ( -250 -250 ) ( 250 250 )
+    + FIXED ( 9550 20000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+  - VDD
+    ( PIN VDD )
+    ( PIN VDD_ISLAND )
+    + USE POWER
+    + ROUTED M1 500
+      ( 8450 0 ) ( * 40000 )
+      NEW M1 500
+      ( 30000 0 ) ( * 40000 )
+    ;
+  - VSS
+    ( PIN VSS )
+    + USE GROUND
+    + ROUTED M1 500
+      ( 9550 0 ) ( * 40000 )
+    ;
+END SPECIALNETS
+
+NETS 0 ;
+END NETS
+
+END DESIGN
+

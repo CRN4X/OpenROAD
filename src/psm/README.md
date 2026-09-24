@@ -72,6 +72,118 @@ check_power_grid
 | `-error_file` | File to write power grid errors to. |
 | `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. |
 
+### Check 3D Power Grid
+
+Build each chiplet's PSM `IRNetwork`, read the inter-die `dbChipRSeg` objects
+from ODB, and stitch the chiplet networks with fixed-resistance connections.
+OpenRCX can populate these objects from assembly extraction rules; tests may
+instead create them with a fixed synthetic resistance.
+This command checks that all nodes in the combined network are connected,
+including isolated metal and terminals. It reports disconnected sections
+inside a chiplet or across chiplets without building or solving a G matrix.
+
+```tcl
+check_3d_power_grid
+    -net chip_net
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`, such as VDD or VSS. |
+
+### Check 3D G Matrix
+
+Build one combined conductance matrix from all on-chip PDN connections and
+inter-die `dbChipRSeg` connections for a top-level power or ground
+`dbChipNet`. This command validates connectivity and matrix construction; it does not add
+voltage sources, build a current vector, or solve for node voltages.
+
+```tcl
+check_3d_g_matrix
+    -net chip_net
+    [-require_tsv]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`, such as VDD or VSS. |
+| `-require_tsv` | Require at least one backside `BridgeConnection` in the combined network. This is useful for checking a TSV-like backside-to-frontside power path. |
+
+### Add 3D PDN Current
+
+Add a signed current injection at a chiplet boundary port. Negative current is
+drawn from a VDD network; positive current is returned into a VSS network.
+Multiple loads at the same node are accumulated.
+
+```tcl
+add_3d_pdn_current
+    -net chip_net
+    -chip chiplet
+    -port port
+    -current current
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`. |
+| `-chip` | Chiplet instance containing the load port. |
+| `-port` | Physical chiplet `dbBTerm` where the current is applied. |
+| `-current` | Signed current injection in amperes. |
+
+### Check 3D J Vector
+
+Build and validate a combined current vector containing one entry for every
+node in the corresponding 3D G matrix.
+
+```tcl
+check_3d_j_vector
+    -net chip_net
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`, such as VDD or VSS. |
+
+### Set 3D PDN Voltage Source
+
+Fix a chiplet boundary port to a package-supplied voltage.
+
+```tcl
+set_3d_pdn_voltage_source
+    -net chip_net
+    -chip chiplet
+    -port port
+    -voltage voltage
+```
+
+### Solve 3D Power Grid
+
+Apply the fixed-voltage boundary conditions and solve `G * V = J`.
+
+```tcl
+solve_3d_power_grid -net chip_net
+```
+
+### Get 3D PDN Voltage
+
+Return the solved voltage at a physical chiplet boundary port.
+
+```tcl
+get_3d_pdn_voltage
+    -net chip_net
+    -chip chiplet
+    -port port
+```
+
+
 ### Write Spice Power Grid
 
 This command writes the `spice` file for power grid.

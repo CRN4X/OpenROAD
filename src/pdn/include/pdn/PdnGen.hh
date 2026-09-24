@@ -159,6 +159,15 @@ class PdnGen
   void writeToDb(bool add_pins, const std::string& report_file = "") const;
   void ripUp(odb::dbNet* net);
 
+  // Test/development helper. Production inter-die parasitics are populated by
+  // OpenRCX from assembly extraction rules.
+  odb::dbChipRSeg* createInterDieConnection(const std::string& chip_net_name,
+                                            const std::string& source_chip_name,
+                                            const std::string& source_port_name,
+                                            const std::string& target_chip_name,
+                                            const std::string& target_port_name,
+                                            float resistance);
+
   void setDebugRenderer(bool on);
   void rendererRedraw();
   void setAllowRepairChannels(bool allow);

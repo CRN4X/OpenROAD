@@ -83,6 +83,23 @@ void reset_shapes()
   pdngen->resetShapes();
 }
 
+odb::dbChipRSeg* add_3d_pdn_connection_cmd(
+    const char* chip_net_name,
+    const char* source_chip_name,
+    const char* source_port_name,
+    const char* target_chip_name,
+    const char* target_port_name,
+    float resistance)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  return pdngen->createInterDieConnection(chip_net_name,
+                                          source_chip_name,
+                                          source_port_name,
+                                          target_chip_name,
+                                          target_port_name,
+                                          resistance);
+}
+
 void build_grids(bool trim = true)
 {
   PdnGen* pdngen = ord::getPdnGen();
