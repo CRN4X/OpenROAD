@@ -87,8 +87,7 @@ odb::dbChipRSeg* PdnGen::createInterDieConnection(
     }
   }
   if (chip_net == nullptr) {
-    logger_->error(
-        utl::PDN, 244, "Cannot find dbChipNet {}.", chip_net_name);
+    logger_->error(utl::PDN, 244, "Cannot find dbChipNet {}.", chip_net_name);
   }
 
   auto find_bump = [&](const std::string& chip_name,
@@ -149,8 +148,7 @@ odb::dbChipRSeg* PdnGen::createInterDieConnection(
     odb::dbChipBumpInst* existing_target
         = rseg->getTargetCapNode()->getChipBumpInst();
     if ((existing_source == source_bump && existing_target == target_bump)
-        || (existing_source == target_bump
-            && existing_target == source_bump)) {
+        || (existing_source == target_bump && existing_target == source_bump)) {
       logger_->error(utl::PDN,
                      248,
                      "A dbChipRSeg already connects {}.{} and {}.{}.",
