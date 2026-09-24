@@ -20,8 +20,8 @@ target_sources(psm
     ir_solver.cpp
     ir_solver_3d.cpp
     ir_network.cpp
-    ir_short.cpp
     ir_network_3d.cpp
+    ir_short.cpp
     connection.cpp
     shape.cpp
     node.cpp

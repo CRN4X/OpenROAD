@@ -56,5 +56,7 @@ or_integration_tests(
     3dic_backside_tsv_singular
     3dic_backside_tsv_solve
     3dic_cross_gmatrix
+    3dic_cross_rcx_gmatrix
     3dic_cross_rseg
 )
+

@@ -1,0 +1,27 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+# Compact metal5 bump for the 20 um x 20 um synthetic chiplets. The generic
+# Nangate45 fake bump is 29 um wide and obscures the entire test in the GUI.
+MACRO BUMP
+  CLASS COVER BUMP ;
+  ORIGIN 0 0 ;
+  SIZE 0.500 BY 0.500 ;
+  SYMMETRY X Y ;
+  PIN PAD
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT 0.000 0.000 0.500 0.500 ;
+    END
+  END PAD
+END BUMP
+
+END LIBRARY
+

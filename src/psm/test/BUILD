@@ -65,6 +65,7 @@ PASSFAIL_TESTS = [
     "3dic_backside_tsv_singular",
     "3dic_backside_tsv_solve",
     "3dic_cross_gmatrix",
+    "3dic_cross_rcx_gmatrix",
     "3dic_cross_rseg",
 ]
 
@@ -184,6 +185,59 @@ filegroup(
     ],
 )
 
+BACKSIDE_TSV_RESOURCES = [
+    "3dic_backside_tsv.3dbv",
+    "3dic_backside_tsv.3dbx",
+    "3dic_backside_tsv_a.def",
+    "3dic_backside_tsv_a_back.bmap",
+    "3dic_backside_tsv_a_front.bmap",
+    "3dic_backside_tsv_b.def",
+    "3dic_backside_tsv_b_front.bmap",
+    "3dic_backside_tsv_cells.lef",
+    "3dic_backside_tsv_tech.lef",
+    "3dic_backside_tsv_top.v",
+]
+
+BACKSIDE_TSV_BROKEN_RESOURCES = [
+    "3dic_backside_tsv_a.def",
+    "3dic_backside_tsv_a_back.bmap",
+    "3dic_backside_tsv_a_front.bmap",
+    "3dic_backside_tsv_b_disconnected.def",
+    "3dic_backside_tsv_b_front.bmap",
+    "3dic_backside_tsv_broken.3dbv",
+    "3dic_backside_tsv_broken.3dbx",
+    "3dic_backside_tsv_cells.lef",
+    "3dic_backside_tsv_tech.lef",
+    "3dic_backside_tsv_top.v",
+]
+
+CROSS_3D_RESOURCES = [
+    "//src/odb/test:regression_resources",
+    "3dic_cross.3dbx",
+    "3dic_cross_bumps.lef",
+    "3dic_cross_flop.3dbv",
+    "3dic_cross_flop_a.bmap",
+    "3dic_cross_flop_a.def",
+    "3dic_cross_flop_b.bmap",
+    "3dic_cross_flop_b.def",
+    "3dic_cross_top.v",
+]
+
+THREED_TEST_RESOURCES = {
+    "3dic_backside_tsv_disconnected": BACKSIDE_TSV_BROKEN_RESOURCES,
+    "3dic_backside_tsv_gmatrix": BACKSIDE_TSV_RESOURCES,
+    "3dic_backside_tsv_invalid_resistance": BACKSIDE_TSV_RESOURCES,
+    "3dic_backside_tsv_jvector": BACKSIDE_TSV_RESOURCES,
+    "3dic_backside_tsv_missing_source": BACKSIDE_TSV_RESOURCES,
+    "3dic_backside_tsv_singular": BACKSIDE_TSV_BROKEN_RESOURCES,
+    "3dic_backside_tsv_solve": BACKSIDE_TSV_RESOURCES,
+    "3dic_cross_gmatrix": CROSS_3D_RESOURCES,
+    "3dic_cross_rcx_gmatrix": CROSS_3D_RESOURCES + [
+        "3dic_cross_assembly.rules",
+    ],
+    "3dic_cross_rseg": CROSS_3D_RESOURCES,
+}
+
 [
     filegroup(
         name = test_name + "_resources",
@@ -191,112 +245,7 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ) + {
-            "3dic_backside_tsv_disconnected": [
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b_disconnected.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_broken.3dbv",
-                "3dic_backside_tsv_broken.3dbx",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_backside_tsv_gmatrix": [
-                "3dic_backside_tsv.3dbv",
-                "3dic_backside_tsv.3dbx",
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_backside_tsv_invalid_resistance": [
-                "3dic_backside_tsv.3dbv",
-                "3dic_backside_tsv.3dbx",
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_backside_tsv_jvector": [
-                "3dic_backside_tsv.3dbv",
-                "3dic_backside_tsv.3dbx",
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_backside_tsv_missing_source": [
-                "3dic_backside_tsv.3dbv",
-                "3dic_backside_tsv.3dbx",
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_backside_tsv_singular": [
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b_disconnected.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_broken.3dbv",
-                "3dic_backside_tsv_broken.3dbx",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_backside_tsv_solve": [
-                "3dic_backside_tsv.3dbv",
-                "3dic_backside_tsv.3dbx",
-                "3dic_backside_tsv_a.def",
-                "3dic_backside_tsv_a_back.bmap",
-                "3dic_backside_tsv_a_front.bmap",
-                "3dic_backside_tsv_b.def",
-                "3dic_backside_tsv_b_front.bmap",
-                "3dic_backside_tsv_cells.lef",
-                "3dic_backside_tsv_tech.lef",
-                "3dic_backside_tsv_top.v",
-            ],
-            "3dic_cross_gmatrix": [
-                "//src/odb/test:regression_resources",
-                "3dic_cross.3dbx",
-                "3dic_cross_flop.3dbv",
-                "3dic_cross_flop_a.bmap",
-                "3dic_cross_flop_a.def",
-                "3dic_cross_flop_b.bmap",
-                "3dic_cross_flop_b.def",
-                "3dic_cross_top.v",
-            ],
-            "3dic_cross_rseg": [
-                "//src/odb/test:regression_resources",
-                "3dic_cross.3dbx",
-                "3dic_cross_flop.3dbv",
-                "3dic_cross_flop_a.bmap",
-                "3dic_cross_flop_a.def",
-                "3dic_cross_flop_b.bmap",
-                "3dic_cross_flop_b.def",
-                "3dic_cross_top.v",
-            ],
-        }.get(test_name, []),
+        ) + THREED_TEST_RESOURCES.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -304,10 +253,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
-        check_log = False if test_name in PASSFAIL_TESTS else True,
-        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = [],
+        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

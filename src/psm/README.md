@@ -76,6 +76,8 @@ check_power_grid
 
 Build each chiplet's PSM `IRNetwork`, read the inter-die `dbChipRSeg` objects
 from ODB, and stitch the chiplet networks with fixed-resistance connections.
+OpenRCX can populate these objects from assembly extraction rules; tests may
+instead create them with a fixed synthetic resistance.
 This command validates graph construction; it does not yet solve a 3D G
 matrix.
 
@@ -179,6 +181,7 @@ get_3d_pdn_voltage
     -chip chiplet
     -port port
 ```
+
 
 ### Write Spice Power Grid
 

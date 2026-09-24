@@ -817,6 +817,8 @@ proc repair_pdn_vias { args } {
   pdn::repair_pdn_vias $nets
 }
 
+# Test/development helper for creating a fixed inter-die resistor. Production
+# flows should populate dbChipRSeg through OpenRCX assembly extraction rules.
 sta::define_cmd_args "add_3d_pdn_connection" {
   -net chip_net
   -source_chip chiplet

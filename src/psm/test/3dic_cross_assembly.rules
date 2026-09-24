@@ -1,0 +1,4 @@
+# Synthetic assembly rule used only by this regression.
+VIA_RESISTANCE
+HBV 0.1
+END

@@ -44,9 +44,11 @@ pdngen
 
 ### Add 3D PDN Connection
 
-Create a fixed-resistance inter-die connection between two chiplet bump
-ports. The command creates or reuses the endpoint `dbChipCapNode` objects and
-stores the resistor as a `dbChipRSeg` on the named `dbChipNet`.
+Test/development helper that creates a fixed-resistance inter-die connection
+between two chiplet bump ports. It creates or reuses the endpoint
+`dbChipCapNode` objects and stores the resistor as a `dbChipRSeg` on the named
+`dbChipNet`. Production flows should instead use OpenRCX assembly extraction
+rules to populate these ODB objects.
 
 ```tcl
 add_3d_pdn_connection
@@ -68,6 +70,7 @@ add_3d_pdn_connection
 | `-target_chip` | Target chiplet instance name. |
 | `-target_port` | Target chiplet bump-port name. |
 | `-resistance` | Positive inter-die resistance in ohms. |
+
 
 ### Define Voltage Domain
 

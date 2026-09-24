@@ -31,3 +31,4 @@ module top (clk_top, in_top, out_top, VDD, VSS);
     .VDD(VDD), .VSS(VSS)
   );
 endmodule
+

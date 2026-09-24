@@ -21,39 +21,58 @@ PINS 5 ;
       + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 0 15000 ) N ;
     - q + NET q + DIRECTION OUTPUT + USE SIGNAL
       + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 40000 15000 ) N ;
-# VDD is at (10000, 10000) DBU = (5 um, 5 um).
-# It is the power boundary terminal (dbBTerm) used by bump_vdd in the BMAP.
+# VDD is on the metal5 rail at (10000, 12800) DBU = (5 um, 6.4 um).
     - VDD + NET VDD + DIRECTION INOUT + USE POWER
-      + LAYER metal1 ( -500 -500 ) ( 500 500 )
-      + PLACED ( 10000 10000 ) N ;
-# VSS is at (30000, 10000) DBU = (15 um, 5 um).
-# It is the ground boundary terminal (dbBTerm) used by bump_vss in the BMAP.
+      + LAYER metal5 ( -500 -500 ) ( 500 500 )
+      + PLACED ( 10000 12800 ) N ;
+# VSS is on the metal5 rail at (30000, 10000) DBU = (15 um, 5 um).
     - VSS + NET VSS + DIRECTION INOUT + USE GROUND
-      + LAYER metal1 ( -500 -500 ) ( 500 500 )
+      + LAYER metal5 ( -500 -500 ) ( 500 500 )
       + PLACED ( 30000 10000 ) N ;
 END PINS
 
-# These SPECIALNETS are the chiplet's small example PDN.
-# ROUTED width 1000 DBU = 0.5 um.
+# Each standard cell has metal1 VSS at y=5.0 um and VDD at y=6.4 um.
+# Horizontal metal5 rails distribute power across the row. At every cell, a
+# via1_0/via2_0/via3_0/via4_0 stack connects the rail down to its metal1 pin.
 SPECIALNETS 2 ;
   - VDD
     ( PIN VDD )
     ( * VDD )
     + USE POWER
-# Both endpoints have x = 10000 DBU (5 um), so this is a vertical VDD stripe.
-# It runs from y = 5 um to y = 20 um.
-    + ROUTED metal1 1000
-      ( 10000 10000 ) ( 10000 40000 )
+    + ROUTED metal5 1000
+      ( 0 12800 ) ( 40000 * )
+      NEW metal4 0 ( 5570 12800 ) via4_0
+      NEW metal3 0 ( 5570 12800 ) via3_0
+      NEW metal2 0 ( 5570 12800 ) via2_0
+      NEW metal1 0 ( 5570 12800 ) via1_0
+      NEW metal4 0 ( 15380 12800 ) via4_0
+      NEW metal3 0 ( 15380 12800 ) via3_0
+      NEW metal2 0 ( 15380 12800 ) via2_0
+      NEW metal1 0 ( 15380 12800 ) via1_0
+      NEW metal4 0 ( 28230 12800 ) via4_0
+      NEW metal3 0 ( 28230 12800 ) via3_0
+      NEW metal2 0 ( 28230 12800 ) via2_0
+      NEW metal1 0 ( 28230 12800 ) via1_0
     ;
 
   - VSS
     ( PIN VSS )
     ( * VSS )
     + USE GROUND
-# Both endpoints have x = 30000 DBU (15 um), so this is a vertical VSS stripe.
-# It runs from y = 5 um to y = 20 um.
-    + ROUTED metal1 1000
-      ( 30000 10000 ) ( 30000 40000 )
+    + ROUTED metal5 1000
+      ( 0 10000 ) ( 40000 * )
+      NEW metal4 0 ( 5570 10000 ) via4_0
+      NEW metal3 0 ( 5570 10000 ) via3_0
+      NEW metal2 0 ( 5570 10000 ) via2_0
+      NEW metal1 0 ( 5570 10000 ) via1_0
+      NEW metal4 0 ( 15380 10000 ) via4_0
+      NEW metal3 0 ( 15380 10000 ) via3_0
+      NEW metal2 0 ( 15380 10000 ) via2_0
+      NEW metal1 0 ( 15380 10000 ) via1_0
+      NEW metal4 0 ( 28230 10000 ) via4_0
+      NEW metal3 0 ( 28230 10000 ) via3_0
+      NEW metal2 0 ( 28230 10000 ) via2_0
+      NEW metal1 0 ( 28230 10000 ) via1_0
     ;
 END SPECIALNETS
 
@@ -66,3 +85,4 @@ NETS 5 ;
 END NETS
 
 END DESIGN
+
