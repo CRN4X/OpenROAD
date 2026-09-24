@@ -41,6 +41,8 @@ IRNetwork::IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning)
   construct();
 }
 
+IRNetwork::~IRNetwork() = default;
+
 void IRNetwork::initMinimumNodePitch()
 {
   min_node_pitch_.clear();
