@@ -1,9 +1,10 @@
 # Validate a 3D PDN path from Chip A's package-facing backside, through a
-# TSV-like B1-to-M1 bridge, and across the front-to-front bond into Chip B.
+# custom BRDL-to-RDL bridge model, and across the front-to-front bond into Chip B.
 set test_name 3dic_backside_tsv_gmatrix
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_rc.tcl"
 
 set db [ord::get_db]
 set top_chip [$db getChip]
@@ -11,7 +12,7 @@ set chip_a [[$top_chip findChipInst chipA] getMasterChip]
 set chip_b [[$top_chip findChipInst chipB] getMasterChip]
 
 check "Chip A declares TSV support" { $chip_a isTsv } 1
-check "Chip B does not declare TSV support" { $chip_b isTsv } 0
+check "Chip B declares its added front-to-back bridge" { $chip_b isTsv } 1
 
 # Synthetic bond resistance until assembly extraction supplies real values.
 add_3d_pdn_connection \

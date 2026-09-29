@@ -3,6 +3,7 @@ set test_name 3dic_backside_tsv_jvector
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_rc.tcl"
 
 # Synthetic 0.1 ohm front-to-front bond resistance.
 add_3d_pdn_connection \

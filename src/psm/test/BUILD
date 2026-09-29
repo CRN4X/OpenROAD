@@ -57,6 +57,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "3dic_backside_tsv_bumps",
     "3dic_backside_tsv_connectivity",
     "3dic_backside_tsv_disconnected",
     "3dic_backside_tsv_gmatrix",
@@ -194,9 +195,11 @@ BACKSIDE_TSV_RESOURCES = [
     "3dic_backside_tsv_a_front.bmap",
     "3dic_backside_tsv_b.def",
     "3dic_backside_tsv_b_front.bmap",
-    "3dic_backside_tsv_cells.lef",
-    "3dic_backside_tsv_tech.lef",
     "3dic_backside_tsv_top.v",
+    "3dic_backside_gt2n_cells.lef",
+    "3dic_backside_tsv_rc.tcl",
+    "gt2n_data/gt2_6t_w31_svt.lef",
+    "gt2n_data/gt2_tech.lef",
 ]
 
 BACKSIDE_TSV_BROKEN_RESOURCES = [
@@ -207,9 +210,11 @@ BACKSIDE_TSV_BROKEN_RESOURCES = [
     "3dic_backside_tsv_b_front.bmap",
     "3dic_backside_tsv_broken.3dbv",
     "3dic_backside_tsv_broken.3dbx",
-    "3dic_backside_tsv_cells.lef",
-    "3dic_backside_tsv_tech.lef",
     "3dic_backside_tsv_top.v",
+    "3dic_backside_gt2n_cells.lef",
+    "3dic_backside_tsv_rc.tcl",
+    "gt2n_data/gt2_6t_w31_svt.lef",
+    "gt2n_data/gt2_tech.lef",
 ]
 
 CROSS_3D_RESOURCES = [
@@ -225,6 +230,7 @@ CROSS_3D_RESOURCES = [
 ]
 
 THREED_TEST_RESOURCES = {
+    "3dic_backside_tsv_bumps": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_connectivity": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_disconnected": BACKSIDE_TSV_BROKEN_RESOURCES,
     "3dic_backside_tsv_gmatrix": BACKSIDE_TSV_RESOURCES,

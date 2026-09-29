@@ -1,3 +1,6 @@
+# GT2N on both chiplets, with separate custom bump/bridge test models.
+# See 3dic_backside_tsv_README.txt for loading and power-analysis commands.
+
 Header:
   version: "1.0"
   unit: "micron"

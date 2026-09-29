@@ -1,0 +1,87 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# Synthetic cells for this power-network example, NOT GT2N PDK cells.
+# All routing layers come from the unchanged GT2N technology LEF.
+# Dimensions are microns. Bump height and a manufactured TSV structure are
+# not described here; the bridge is a two-sided electrical test model.
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+PROPERTYDEFINITIONS
+  MACRO LEF58_BACKSIDE_BRIDGE STRING ;
+END PROPERTYDEFINITIONS
+
+MACRO GT2N_TEST_BUMP_FRONT
+  CLASS COVER BUMP ;
+  ORIGIN 0 0 ;
+  SIZE 1.600 BY 1.600 ;
+  SYMMETRY X Y ;
+  PIN PAD
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER RDL ;
+        RECT 0.000 0.000 1.600 1.600 ;
+    END
+  END PAD
+END GT2N_TEST_BUMP_FRONT
+
+MACRO GT2N_TEST_BUMP_BACK
+  CLASS COVER BUMP ;
+  ORIGIN 0 0 ;
+  SIZE 1.600 BY 1.600 ;
+  SYMMETRY X Y ;
+  PIN PAD
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER BRDL ;
+        RECT 0.000 0.000 1.600 1.600 ;
+    END
+  END PAD
+END GT2N_TEST_BUMP_BACK
+
+# Each supply gets its own small bridge cell and its own visible boundary.
+# Each cell has ONE pin with an RDL contact and a BRDL contact at the same x/y.
+# PSM's BridgeConnection supplies the model's fixed 0.001 ohm bridge edge;
+# these are synthetic models, not GT2N-provided or characterized TSV cells.
+MACRO GT2N_TEST_TSV_VDD
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 2.000 BY 2.000 ;
+  SYMMETRY X Y ;
+  PROPERTY LEF58_BACKSIDE_BRIDGE "BACKSIDEBRIDGE ;" ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER RDL ;
+        RECT 0.200 0.200 1.800 1.800 ;
+      LAYER BRDL ;
+        RECT 0.200 0.200 1.800 1.800 ;
+    END
+  END VDD
+END GT2N_TEST_TSV_VDD
+
+MACRO GT2N_TEST_TSV_VSS
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 2.000 BY 2.000 ;
+  SYMMETRY X Y ;
+  PROPERTY LEF58_BACKSIDE_BRIDGE "BACKSIDEBRIDGE ;" ;
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER RDL ;
+        RECT 0.200 0.200 1.800 1.800 ;
+      LAYER BRDL ;
+        RECT 0.200 0.200 1.800 1.800 ;
+    END
+  END VSS
+END GT2N_TEST_TSV_VSS
+
+END LIBRARY

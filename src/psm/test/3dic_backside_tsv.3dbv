@@ -1,3 +1,11 @@
+#!define GT2N_PATH gt2n_data
+
+# Both chiplets use the existing GT2N technology and standard-cell LEFs.
+# Custom test bumps/bridge are separate; no PDK LEF is modified.
+# RDL is frontside; BRDL is backside. Both dies are 20 x 20 um.
+# Each chiplet places a GT2N flip-flop, inverter and buffer, plus separate VDD/VSS test bridges.
+# Before running PSM, source 3dic_backside_tsv_rc.tcl for layer resistance.
+
 Header:
   version: 2.5
   unit: micron
@@ -8,8 +16,6 @@ ChipletDef:
     type: die
     design_area: [20, 20]
     shrink: 1
-    # This declares that Chip A contains TSV technology. The TSV_BRIDGE
-    # physical cell in its DEF supplies the electrical B1-to-M1 connection.
     tsv: true
     thickness: 300
     offset: [0, 0]
@@ -22,7 +28,7 @@ ChipletDef:
           - [20, 20]
           - [0, 20]
         bmap: 3dic_backside_tsv_a_front.bmap
-        layer: M1
+        layer: RDL
       back_reg:
         side: back
         coords:
@@ -31,17 +37,18 @@ ChipletDef:
           - [20, 20]
           - [0, 20]
         bmap: 3dic_backside_tsv_a_back.bmap
-        layer: B1
+        layer: BRDL
     external:
-      APR_tech_file: [3dic_backside_tsv_tech.lef]
-      LEF_file: [3dic_backside_tsv_cells.lef]
+      APR_tech_file: [GT2N_PATH/gt2_tech.lef]
+      LEF_file: [GT2N_PATH/gt2_6t_w31_svt.lef, 3dic_backside_gt2n_cells.lef]
       DEF_file: 3dic_backside_tsv_a.def
 
   backside_tsv_chip_b:
     type: die
     design_area: [20, 20]
     shrink: 1
-    tsv: false
+    # Its bridges feed the GT2N buried power rails from the front-side bumps.
+    tsv: true
     thickness: 300
     offset: [0, 0]
     regions:
@@ -53,9 +60,9 @@ ChipletDef:
           - [20, 20]
           - [0, 20]
         bmap: 3dic_backside_tsv_b_front.bmap
-        layer: M1
+        layer: RDL
     external:
-      APR_tech_file: [3dic_backside_tsv_tech.lef]
-      LEF_file: [3dic_backside_tsv_cells.lef]
+      APR_tech_file: [GT2N_PATH/gt2_tech.lef]
+      LEF_file: [GT2N_PATH/gt2_6t_w31_svt.lef, 3dic_backside_gt2n_cells.lef]
       DEF_file: 3dic_backside_tsv_b.def
 

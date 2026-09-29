@@ -3,6 +3,7 @@ set test_name 3dic_backside_tsv_invalid_resistance
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_rc.tcl"
 
 # Create a valid dbChipRSeg first, then corrupt it to exercise the database
 # validation in IRNetwork3D rather than Tcl argument validation.

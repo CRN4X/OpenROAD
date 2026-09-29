@@ -3,6 +3,7 @@ set test_name 3dic_backside_tsv_missing_source
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_rc.tcl"
 
 add_3d_pdn_connection \
   -net VDD \

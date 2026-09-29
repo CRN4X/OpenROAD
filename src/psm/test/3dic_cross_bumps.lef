@@ -11,7 +11,7 @@ END UNITS
 # Defines a small 0.5 µm bump on metal5.
 
 
-# power bumps connect the two chiplets (could be tsv also)
+# power bumps connecting the two chiplets (could be tsv or anything else)
 
 MACRO BUMP   # Define a cell type named BUMP
   CLASS COVER BUMP ;  # Identify it as a physical bump cell
@@ -24,8 +24,10 @@ MACRO BUMP   # Define a cell type named BUMP
     PORT
       LAYER metal5 ;
         RECT 0.000 0.000 0.500 0.500 ; # Define the pin’s actual metal shape: a 0.5 µm square on metal5, covering the whole footprint.
+        
         # RECT  x_left  y_bottom  x_right  y_top ;
         # RECT  0.000   0.000     0.500    0.500 ;
+        
     END
   END PAD
 END BUMP
