@@ -13,6 +13,61 @@ Features:
 
 ![picorv32](doc/picorv32.png)
 
+## 3D Power-Grid Test Setup
+
+From `src/psm/test`, load the GT2N example and create its test connections:
+
+```tcl
+read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections.tcl"
+source "3dic_backside_tsv_rc.tcl"
+```
+
+`read_3dbx` loads the chiplets, bumps, nets, and bonds into OpenDB. It does
+not create resistor objects. The connections script then uses the existing
+`odb::dbChipCapNode_create` and `odb::dbChipRSeg_create` APIs to add one
+VDD bond resistor and one VSS bond resistor. It connects Chip A's front
+bumps to Chip B's front bumps. Each assembly supply net contains only those
+two front bumps. The package-facing backside bumps remain on Chip A's
+local DEF power nets; they are not assembly-net members. All six physical
+bumps remain in the layout, and PSM can still supply Chip A at its local
+backside ports.
+
+The script sets each bond resistance to **0.1 ohm**, an explicit test value.
+It does not extract a physical resistance or read an assembly rules file.
+For real chips, use characterized PDK or package values. Source it once,
+before running PSM analysis, in a freshly loaded example. It reports an
+error if power-net resistor objects already exist. The separate RC script
+sets the routing-layer and via resistances used by this GT2N example.
+
+PSM reads the resistor objects for connectivity checks and IR-drop analysis.
+There is no PSM-to-RCX extraction callback. The existing RCX, OpenDB, and
+PDN APIs supply all the operations needed for this test setup.
+`write_db` saves the resistors and their endpoints. After `read_db`, use
+the saved objects without sourcing the connections script again.
+
+For Tcl queries, `psm::get_3d_chip_rsegs $chip_net` returns the stored
+resistors, and `psm::get_3d_chip_cap_node_count $chip_net` returns the endpoint
+node count. These are read-only PSM wrappers around existing OpenDB APIs.
+
+The Nangate45 examples can instead use the existing full OpenRCX flow:
+
+```tcl
+read_3dbx "3dic_cross.3dbx"
+set_extraction_rules_file -tech Nangate45_tech "Nangate45/Nangate45.rcx_rules"
+set_extraction_rules_file -assembly "3dic_cross_assembly.rules"
+extract_parasitics
+```
+
+That command reads the technology and assembly rules, extracts each die,
+and creates the inter-chip resistors. Its assembly rules file uses the
+existing `VIA_RESISTANCE` / `HBV 0.1` / `END` format. Run it once in a fresh
+example: the original RCX implementation creates new resistor objects
+on each extraction. It supports two bumps per inter-chip net. The GT2N
+example now meets that bump-count requirement: its top Verilog connects
+only the front ports to the assembly supply nets. Its supplied data still
+has no RCX extraction model, so its tests use the explicit ODB setup above.
+
 ## Commands
 
 ```{note}
@@ -77,7 +132,7 @@ check_power_grid
 Build each chiplet's PSM `IRNetwork`, read the inter-die `dbChipRSeg` objects
 from ODB, and stitch the chiplet networks with fixed-resistance connections.
 OpenRCX can populate these objects from assembly extraction rules; tests may
-instead create them with a fixed synthetic resistance.
+instead use the same rules reader through the file reference above.
 This command checks that all nodes in the combined network are connected,
 including isolated metal and terminals. It reports disconnected sections
 inside a chiplet or across chiplets without building or solving a G matrix.

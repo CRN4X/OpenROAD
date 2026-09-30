@@ -3,23 +3,8 @@ set test_name 3dic_backside_tsv_jvector
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections.tcl"
 source "3dic_backside_tsv_rc.tcl"
-
-# Synthetic 0.1 ohm front-to-front bond resistance.
-add_3d_pdn_connection \
-  -net VDD \
-  -source_chip chipA \
-  -source_port VDD_FRONT \
-  -target_chip chipB \
-  -target_port VDD \
-  -resistance 0.1
-add_3d_pdn_connection \
-  -net VSS \
-  -source_chip chipA \
-  -source_port VSS_FRONT \
-  -target_chip chipB \
-  -target_port VSS \
-  -resistance 0.1
 
 check "The test topology contains backside TSV bridges" {
   check_3d_g_matrix -net VDD -require_tsv

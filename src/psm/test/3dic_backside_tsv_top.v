@@ -13,8 +13,11 @@ module backside_tsv_top (VDD, VSS);
   backside_tsv_chip_a chipA (
     .VDD_FRONT(VDD),
     .VSS_FRONT(VSS),
-    .VDD_BACK(VDD),
-    .VSS_BACK(VSS)
+    // Package bumps stay on Chip A's local DEF power nets. Leave their
+    // ports unbound here so each assembly net contains only the two
+    // facing front bumps. PSM applies sources at these local back ports.
+    .VDD_BACK(),
+    .VSS_BACK()
   );
 
   backside_tsv_chip_b chipB (

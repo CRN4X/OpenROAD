@@ -3,23 +3,8 @@ set test_name 3dic_backside_tsv_solve
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections.tcl"
 source "3dic_backside_tsv_rc.tcl"
-
-# Synthetic 0.1 ohm front-to-front bond resistance.
-add_3d_pdn_connection \
-  -net VDD \
-  -source_chip chipA \
-  -source_port VDD_FRONT \
-  -target_chip chipB \
-  -target_port VDD \
-  -resistance 0.1
-add_3d_pdn_connection \
-  -net VSS \
-  -source_chip chipA \
-  -source_port VSS_FRONT \
-  -target_chip chipB \
-  -target_port VSS \
-  -resistance 0.1
 
 # Chip A and Chip B draw 10 mA and 20 mA from VDD and return the same
 # currents into VSS.

@@ -64,6 +64,7 @@ PASSFAIL_TESTS = [
     "3dic_backside_tsv_invalid_resistance",
     "3dic_backside_tsv_jvector",
     "3dic_backside_tsv_missing_source",
+    "3dic_backside_tsv_odb",
     "3dic_backside_tsv_singular",
     "3dic_backside_tsv_solve",
     "3dic_cross_gmatrix",
@@ -188,6 +189,8 @@ filegroup(
 )
 
 BACKSIDE_TSV_RESOURCES = [
+    "3dic_backside_tsv_connections.tcl",
+    "3dic_helpers.tcl",
     "3dic_backside_tsv.3dbv",
     "3dic_backside_tsv.3dbx",
     "3dic_backside_tsv_a.def",
@@ -200,9 +203,12 @@ BACKSIDE_TSV_RESOURCES = [
     "3dic_backside_tsv_rc.tcl",
     "gt2n_data/gt2_6t_w31_svt.lef",
     "gt2n_data/gt2_tech.lef",
+    "gt2n_data/setRC.tcl",
 ]
 
 BACKSIDE_TSV_BROKEN_RESOURCES = [
+    "3dic_backside_tsv_connections.tcl",
+    "3dic_helpers.tcl",
     "3dic_backside_tsv_a.def",
     "3dic_backside_tsv_a_back.bmap",
     "3dic_backside_tsv_a_front.bmap",
@@ -215,9 +221,12 @@ BACKSIDE_TSV_BROKEN_RESOURCES = [
     "3dic_backside_tsv_rc.tcl",
     "gt2n_data/gt2_6t_w31_svt.lef",
     "gt2n_data/gt2_tech.lef",
+    "gt2n_data/setRC.tcl",
 ]
 
 CROSS_3D_RESOURCES = [
+    "3dic_cross_assembly.rules",
+    "3dic_helpers.tcl",
     "//src/odb/test:regression_resources",
     "3dic_cross.3dbx",
     "3dic_cross_bumps.lef",
@@ -237,12 +246,11 @@ THREED_TEST_RESOURCES = {
     "3dic_backside_tsv_invalid_resistance": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_jvector": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_missing_source": BACKSIDE_TSV_RESOURCES,
+    "3dic_backside_tsv_odb": BACKSIDE_TSV_RESOURCES,
     "3dic_backside_tsv_singular": BACKSIDE_TSV_BROKEN_RESOURCES,
     "3dic_backside_tsv_solve": BACKSIDE_TSV_RESOURCES,
     "3dic_cross_gmatrix": CROSS_3D_RESOURCES,
-    "3dic_cross_rcx_gmatrix": CROSS_3D_RESOURCES + [
-        "3dic_cross_assembly.rules",
-    ],
+    "3dic_cross_rcx_gmatrix": CROSS_3D_RESOURCES,
     "3dic_cross_rseg": CROSS_3D_RESOURCES,
 }
 

@@ -4,6 +4,7 @@ set test_name 3dic_backside_tsv_gmatrix
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections.tcl"
 source "3dic_backside_tsv_rc.tcl"
 
 set db [ord::get_db]
@@ -12,26 +13,11 @@ set chip_a [[$top_chip findChipInst chipA] getMasterChip]
 set chip_b [[$top_chip findChipInst chipB] getMasterChip]
 
 check "Chip A declares TSV support" { $chip_a isTsv } 1
-check "Chip B declares its added front-to-back bridge" { $chip_b isTsv } 1
+check "Chip B declares TSV support" { $chip_b isTsv } 1
 
-# Synthetic bond resistance until assembly extraction supplies real values.
-add_3d_pdn_connection \
-  -net VDD \
-  -source_chip chipA \
-  -source_port VDD_FRONT \
-  -target_chip chipB \
-  -target_port VDD \
-  -resistance 0.1
-add_3d_pdn_connection \
-  -net VSS \
-  -source_chip chipA \
-  -source_port VSS_FRONT \
-  -target_chip chipB \
-  -target_port VSS \
-  -resistance 0.1
-
-# -require_tsv prevents this regression from passing with only the inter-die
-# bond. PSM must also find and stamp Chip A's backside BridgeConnection.
+# Both chiplets contain backside bridge models. The -require_tsv option
+# checks that bridge connections are present in the combined G matrix;
+# the connectivity test separately checks each supply's bridge path.
 check "VDD G matrix contains the backside TSV and inter-die bond" {
   check_3d_g_matrix -net VDD -require_tsv
 } 1

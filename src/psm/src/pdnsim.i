@@ -4,6 +4,8 @@
 %include "../../Exception.i"
 %{
 #include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include <vector>
 #include "psm/pdnsim.h"
 #include "sta/Scene.hh"
 
@@ -44,7 +46,35 @@ using sta::Scene;
   }
 }
 
+%typemap(out) std::vector<odb::dbChipRSeg*> {
+  Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
+  for (auto* resistor : $1) {
+    Tcl_ListObjAppendElement(interp, list,
+        SWIG_NewPointerObj(resistor, $descriptor(odb::dbChipRSeg*), 0));
+  }
+  Tcl_SetObjResult(interp, list);
+}
+
 %inline %{
+
+// ODB's C++ collections are available even when its Tcl list wrappers are not.
+std::vector<odb::dbChipRSeg*>
+get_3d_chip_rsegs(odb::dbChipNet* net)
+{
+  std::vector<odb::dbChipRSeg*> resistors;
+  if (net) {
+    for (auto* resistor : net->getChipRSegs()) {
+      resistors.push_back(resistor);
+    }
+  }
+  return resistors;
+}
+
+int
+get_3d_chip_cap_node_count(odb::dbChipNet* net)
+{
+  return net ? net->getChipCapNodes().size() : 0;
+}
 
 
 void 

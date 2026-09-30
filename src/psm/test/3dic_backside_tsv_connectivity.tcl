@@ -1,18 +1,13 @@
 # Check 3D reachability across the bond and backside bridge, including isolated metal.
 set test_name 3dic_backside_tsv_connectivity
 source "helpers.tcl"
+source "3dic_helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections.tcl"
 source "3dic_backside_tsv_rc.tcl"
 
 foreach net { VDD VSS } {
-  set rseg($net) [add_3d_pdn_connection \
-    -net $net \
-    -source_chip chipA \
-    -source_port ${net}_FRONT \
-    -target_chip chipB \
-    -target_port $net \
-    -resistance 0.1]
   check "Connected $net passes the 3D power-grid check" {
     check_3d_power_grid -net $net
   } 1
@@ -86,7 +81,7 @@ check "Restoring VDD also restores the G matrix" {
 } 1
 
 # Both chip PDNs are intact, but their electrical bond is now missing.
-odb::dbChipRSeg_destroy $rseg(VDD)
+odb::dbChipRSeg_destroy [get_3dic_rseg VDD]
 foreach { command error_id } { check_3d_power_grid PSM-0103 check_3d_g_matrix PSM-0137 } {
   set failed [catch { $command -net VDD } error]
   check "$command rejects a missing inter-die connection" {

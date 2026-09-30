@@ -1,27 +1,19 @@
-# Create fixed inter-die resistance segments with PDN, then have PSM read
-# those ODB objects and stitch the two chiplet PDN graphs.
+# Use standard OpenRCX extraction to create the inter-die resistors,
+# then have PSM read them and stitch the two chiplet PDN graphs.
 
 source "helpers.tcl"
+source "3dic_helpers.tcl"
 
 read_3dbx "3dic_cross.3dbx"
+set_extraction_rules_file -tech Nangate45_tech "Nangate45/Nangate45.rcx_rules"
+set_extraction_rules_file -assembly "3dic_cross_assembly.rules"
+extract_parasitics
 
-# Use a synthetic 0.1 ohm resistance for both power connections.  This value
-# is for solver development only; a real value must come from assembly rules
-# or foundry/OSAT characterization.
-set vdd_rseg [add_3d_pdn_connection \
-  -net VDD \
-  -source_chip chipA \
-  -source_port VDD \
-  -target_chip chipB \
-  -target_port VDD \
-  -resistance 0.1]
-set vss_rseg [add_3d_pdn_connection \
-  -net VSS \
-  -source_chip chipA \
-  -source_port VSS \
-  -target_chip chipB \
-  -target_port VSS \
-  -resistance 0.1]
+# RCX reads the 0.1-ohm HBV test value from 3dic_cross_assembly.rules.
+# The queries below retrieve the resistors it already stored in ODB.
+# The rule value is a test assumption.
+set vdd_rseg [get_3dic_rseg VDD]
+set vss_rseg [get_3dic_rseg VSS]
 
 set vdd_source_node [$vdd_rseg getSourceCapNode]
 set vdd_target_node [$vdd_rseg getTargetCapNode]

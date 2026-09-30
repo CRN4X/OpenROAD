@@ -55,6 +55,7 @@ or_integration_tests(
     3dic_backside_tsv_invalid_resistance
     3dic_backside_tsv_jvector
     3dic_backside_tsv_missing_source
+    3dic_backside_tsv_odb
     3dic_backside_tsv_singular
     3dic_backside_tsv_solve
     3dic_cross_gmatrix

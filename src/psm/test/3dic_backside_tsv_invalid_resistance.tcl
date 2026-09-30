@@ -1,19 +1,14 @@
 # Verify that a nonpositive inter-die resistance is rejected while building G.
 set test_name 3dic_backside_tsv_invalid_resistance
 source "helpers.tcl"
+source "3dic_helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections.tcl"
 source "3dic_backside_tsv_rc.tcl"
 
-# Create a valid dbChipRSeg first, then corrupt it to exercise the database
-# validation in IRNetwork3D rather than Tcl argument validation.
-set rseg [add_3d_pdn_connection \
-  -net VDD \
-  -source_chip chipA \
-  -source_port VDD_FRONT \
-  -target_chip chipB \
-  -target_port VDD \
-  -resistance 0.1]
+# Set a test dbChipRSeg to zero to exercise IRNetwork3D validation.
+set rseg [get_3dic_rseg VDD]
 $rseg setResistance 0.0
 
 set failed [catch { check_3d_g_matrix -net VDD } error]
