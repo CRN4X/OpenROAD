@@ -3,8 +3,8 @@ set test_name 3dic_backside_tsv_solve
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 
 # Chip A and Chip B draw 10 mA and 20 mA from VDD and return the same
 # currents into VSS.

@@ -19,8 +19,8 @@ From `src/psm/test`, load the GT2N example and create its test connections:
 
 ```tcl
 read_3dbx "3dic_backside_tsv.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 ```
 
 `read_3dbx` loads the chiplets, bumps, nets, and bonds into OpenDB. It does

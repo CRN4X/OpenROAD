@@ -3,8 +3,8 @@ set test_name 3dic_backside_tsv_disconnected
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv_broken.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 
 set failed [catch { check_3d_power_grid -net VDD } error]
 check "3D power-grid check rejects a disconnected PDN" {

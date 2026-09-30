@@ -3,8 +3,8 @@ set test_name 3dic_backside_tsv_missing_source
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 
 add_3d_pdn_current \
   -net VDD -chip chipB -port VDD -current -0.02

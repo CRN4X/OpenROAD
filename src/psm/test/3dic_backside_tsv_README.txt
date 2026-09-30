@@ -27,8 +27,8 @@ then calculates and checks the voltages. Its final Summary should report
 
 Why there are several Tcl files
 ------------------------------
-3dic_backside_tsv_connections.tcl: creates the two test bond resistors.
-3dic_backside_tsv_rc.tcl: loads the GT2N wire and via resistance values.
+3dic_backside_tsv_connections_setup.tcl: creates the two test bond resistors.
+3dic_backside_tsv_rc_setup.tcl: loads the GT2N wire and via resistance values.
 3dic_backside_tsv_solve.tcl: runs the complete example and voltage checks.
 The other Tcl tests check individual problems, such as broken wires,
 missing voltage sources, invalid resistance or lost data after saving ODB.
@@ -134,8 +134,8 @@ Create and check the test's electrical connections
 --------------------------------------------------
 Continue INSIDE the same OpenROAD Tcl console, before any power analysis:
 
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 check_3d_power_grid -net VDD
 check_3d_power_grid -net VSS
 check_3d_g_matrix -net VDD -require_tsv
@@ -230,12 +230,12 @@ The tests therefore continue to use explicit ODB setup and leave RCX unchanged.
 Resistance assumptions
 ----------------------
 The GT2N technology LEF does not contain resistance values.
-3dic_backside_tsv_rc.tcl sets command units to ohms, microns and pF, then
+3dic_backside_tsv_rc_setup.tcl sets command units to ohms, microns and pF, then
 sources the existing gt2n_data/setRC.tcl. Its set_layer_rc commands load
 the values into ODB; we do not copy the table or modify the PDK files.
 Both chiplets share this GT2N technology, so the setup applies to both.
 
-Inside 3dic_backside_tsv_rc.tcl, these are TWO SEPARATE Tcl commands:
+Inside 3dic_backside_tsv_rc_setup.tcl, these are TWO SEPARATE Tcl commands:
 
 set_cmd_units -resistance ohm -distance um -capacitance pF
 source "gt2n_data/setRC.tcl"
@@ -243,7 +243,7 @@ source "gt2n_data/setRC.tcl"
 Keep them on separate lines, in this order. The first command sets units;
 the second runs the RC file using those units. Do not put a backslash
 between these commands: a backslash would join them into one command.
-If you source 3dic_backside_tsv_rc.tcl, it already runs both commands, so
+If you source 3dic_backside_tsv_rc_setup.tcl, it already runs both commands, so
 you do not need to type them again.
 
 um means micrometres and is needed for resistance per unit wire length.

@@ -3,8 +3,8 @@ set test_name 3dic_backside_tsv_jvector
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 
 check "The test topology contains backside TSV bridges" {
   check_3d_g_matrix -net VDD -require_tsv

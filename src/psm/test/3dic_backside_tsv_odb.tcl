@@ -41,7 +41,7 @@ foreach net [[[ord::get_db] getChip] getChipNets] {
     psm::get_3d_chip_cap_node_count $net
   } 0
 }
-source "3dic_backside_tsv_connections.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
 check "The old PDN helper is absent" { info commands add_3d_pdn_connection } {}
 foreach net_name { VDD VSS } {
   set rseg [get_3dic_rseg $net_name]
@@ -65,7 +65,7 @@ foreach net_name { VDD VSS } {
   }
 }
 
-set failed [catch { source "3dic_backside_tsv_connections.tcl" } message]
+set failed [catch { source "3dic_backside_tsv_connections_setup.tcl" } message]
 check "Repeated test setup reports existing resistors" {
   expr { $failed && [string first "already exist" $message] >= 0 }
 } 1

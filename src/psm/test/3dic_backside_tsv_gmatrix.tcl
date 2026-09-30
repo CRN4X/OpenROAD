@@ -4,8 +4,8 @@ set test_name 3dic_backside_tsv_gmatrix
 source "helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 
 set db [ord::get_db]
 set top_chip [$db getChip]

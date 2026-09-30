@@ -1,7 +1,7 @@
 # Synthetic assembly rule used only by this regression.
 # Format reused from src/rcx/src/interChipModel.cpp.
 
-# One limitation: the current parser accepts one HBV resistance and
+# One limitation: the current code accepts one HBV resistance and
 # applies it to every connection bond it models
 # It does not support a different resistance for each individual bond.
 

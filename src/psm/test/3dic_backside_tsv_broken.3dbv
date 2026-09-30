@@ -4,7 +4,7 @@
 # Custom test bumps/bridge are separate; no PDK LEF is modified.
 # RDL is frontside; BRDL is backside. Both dies are 20 x 20 um.
 # Each chiplet places a GT2N flip-flop, inverter and buffer, plus separate VDD/VSS test bridges.
-# Before running PSM, source 3dic_backside_tsv_rc.tcl for layer resistance.
+# Before running PSM, source 3dic_backside_tsv_rc_setup.tcl for layer resistance.
 
 Header:
   version: 2.5

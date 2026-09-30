@@ -4,8 +4,8 @@ source "helpers.tcl"
 source "3dic_helpers.tcl"
 
 read_3dbx "3dic_backside_tsv.3dbx"
-source "3dic_backside_tsv_connections.tcl"
-source "3dic_backside_tsv_rc.tcl"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
 
 foreach net { VDD VSS } {
   check "Connected $net passes the 3D power-grid check" {

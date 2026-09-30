@@ -189,7 +189,7 @@ filegroup(
 )
 
 BACKSIDE_TSV_RESOURCES = [
-    "3dic_backside_tsv_connections.tcl",
+    "3dic_backside_tsv_connections_setup.tcl",
     "3dic_helpers.tcl",
     "3dic_backside_tsv.3dbv",
     "3dic_backside_tsv.3dbx",
@@ -200,14 +200,14 @@ BACKSIDE_TSV_RESOURCES = [
     "3dic_backside_tsv_b_front.bmap",
     "3dic_backside_tsv_top.v",
     "3dic_backside_gt2n_cells.lef",
-    "3dic_backside_tsv_rc.tcl",
+    "3dic_backside_tsv_rc_setup.tcl",
     "gt2n_data/gt2_6t_w31_svt.lef",
     "gt2n_data/gt2_tech.lef",
     "gt2n_data/setRC.tcl",
 ]
 
 BACKSIDE_TSV_BROKEN_RESOURCES = [
-    "3dic_backside_tsv_connections.tcl",
+    "3dic_backside_tsv_connections_setup.tcl",
     "3dic_helpers.tcl",
     "3dic_backside_tsv_a.def",
     "3dic_backside_tsv_a_back.bmap",
@@ -218,7 +218,7 @@ BACKSIDE_TSV_BROKEN_RESOURCES = [
     "3dic_backside_tsv_broken.3dbx",
     "3dic_backside_tsv_top.v",
     "3dic_backside_gt2n_cells.lef",
-    "3dic_backside_tsv_rc.tcl",
+    "3dic_backside_tsv_rc_setup.tcl",
     "gt2n_data/gt2_6t_w31_svt.lef",
     "gt2n_data/gt2_tech.lef",
     "gt2n_data/setRC.tcl",
