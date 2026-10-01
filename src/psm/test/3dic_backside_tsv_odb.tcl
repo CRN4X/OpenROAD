@@ -41,7 +41,60 @@ foreach net [[[ord::get_db] getChip] getChipNets] {
     psm::get_3d_chip_cap_node_count $net
   } 0
 }
-source "3dic_backside_tsv_connections_setup.tcl"
+# Exercise the real setup script with a separate rules file, leaving the
+# shared regression input unchanged. The setup resolves rules beside itself.
+set rules_dir [make_result_file "${test_name}_rules"]
+file mkdir $rules_dir
+set setup_script [file join $rules_dir 3dic_backside_tsv_connections_setup.tcl]
+file copy -force "3dic_backside_tsv_connections_setup.tcl" $setup_script
+set rules_file [file join $rules_dir 3dic_cross_assembly.rules]
+foreach { label contents } {
+  "missing HBV" {VIA_RESISTANCE
+END}
+  "HBV outside table" {HBV 0.25
+VIA_RESISTANCE
+END}
+  "nonnumeric HBV" {VIA_RESISTANCE
+HBV invalid
+END}
+  "nonpositive HBV" {VIA_RESISTANCE
+HBV 0
+END}
+  "infinite HBV" {VIA_RESISTANCE
+HBV Inf
+END}
+} {
+  set stream [open $rules_file w]
+  puts $stream $contents
+  close $stream
+  set failed [catch { source $setup_script } message]
+  check "Setup rejects $label" {
+    expr { $failed && [string first "positive finite HBV" $message] >= 0 }
+  } 1
+  set empty 1
+  foreach net [[[ord::get_db] getChip] getChipNets] {
+    if {
+      [llength [psm::get_3d_chip_rsegs $net]] != 0
+      || [psm::get_3d_chip_cap_node_count $net] != 0
+    } {
+      set empty 0
+    }
+  }
+  check "No partial connections after $label" { set empty } 1
+}
+
+# A different HBV value must reach ODB and survive save/reload. Ignore comments
+# and use the first table entry, matching the RCX assembly reader.
+set stream [open $rules_file w]
+puts $stream {# HBV 9.0 is only a comment.
+
+VIA_RESISTANCE
+    HBV   0.25  # ohms
+HBV 0.5
+END}
+close $stream
+set expected_resistance 0.25
+source $setup_script
 check "The old PDN helper is absent" { info commands add_3d_pdn_connection } {}
 foreach net_name { VDD VSS } {
   set rseg [get_3dic_rseg $net_name]
@@ -52,8 +105,8 @@ foreach net_name { VDD VSS } {
   check "$net_name has two resistor endpoint nodes" {
     psm::get_3d_chip_cap_node_count $net
   } 2
-  check "$net_name has the stated test resistance" {
-    expr { abs([$rseg getResistance] - 0.1) < 1e-6 }
+  check "$net_name uses the resistance from the rules file" {
+    expr { abs([$rseg getResistance] - $expected_resistance) < 1e-6 }
   } 1
   foreach endpoint { Source Target } chip_name { chipA chipB } suffix { _FRONT {} } {
     set node [$rseg get${endpoint}CapNode]
@@ -65,7 +118,7 @@ foreach net_name { VDD VSS } {
   }
 }
 
-set failed [catch { source "3dic_backside_tsv_connections_setup.tcl" } message]
+set failed [catch { source $setup_script } message]
 check "Repeated test setup reports existing resistors" {
   expr { $failed && [string first "already exist" $message] >= 0 }
 } 1
@@ -85,6 +138,7 @@ write_db $snapshot
 set reload_script [make_result_file "reload_connections.tcl"]
 set stream [open $reload_script w]
 puts $stream [list read_db $snapshot]
+puts $stream [list set expected_resistance $expected_resistance]
 puts $stream {
   set db [ord::get_db]
   if { [llength [$db getChipBumpInsts]] != 6 } {
@@ -123,7 +177,7 @@ puts $stream {
       error "Saved $name is missing its resistor or endpoint nodes"
     }
     set rseg [lindex $segments 0]
-    if { abs([$rseg getResistance] - 0.1) > 1e-6 } {
+    if { abs([$rseg getResistance] - $expected_resistance) > 1e-6 } {
       error "Saved $name has the wrong resistance"
     }
     foreach endpoint {Source Target} chip_name {chipA chipB} suffix {_FRONT {}} {

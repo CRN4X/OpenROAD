@@ -163,10 +163,20 @@ This creation step is still needed: read_3dbx loads the assembly connections,
 but does not create resistor objects. The script supplies the two test
 resistors that PSM needs to calculate the chip-to-chip voltage drop.
 
-The 0.1-ohm value is defined near the top of the connections Tcl file.
-It is an assumed test value, not a resistance extracted from GT2N geometry.
-This script does not read 3dic_cross_assembly.rules and does not call RCX.
-There is no automatic extraction trigger in PSM.
+The connections script reads the bond resistance from 3dic_cross_assembly.rules,
+located beside the script. The file currently contains:
+
+VIA_RESISTANCE
+HBV 0.1
+END
+
+This is the same assembly rules file used by the Nangate RCX tests. The script
+reads the first HBV entry in the VIA_RESISTANCE table and assigns that value
+in ohms to both bond resistors. Comments and blank lines are ignored. A missing,
+invalid or nonpositive resistance stops setup before any resistor is created.
+The value is a test assumption, not a resistance extracted from GT2N geometry.
+The setup script reads the file itself and does not call RCX. There is no
+automatic extraction trigger in PSM.
 
 Each supply path still has three physical bumps. They are connected in
 two sections:
@@ -191,7 +201,8 @@ including its backside source port, in the combined power network.
 
 Source the connections script only once per freshly loaded example. It
 reports an error if the power-net resistor objects already exist. To change
-the assumed bond resistance, edit its value and start a fresh session.
+the assumed bond resistance, edit the HBV value in 3dic_cross_assembly.rules
+and start a fresh session. The regression checks expect the supplied 0.1-ohm value.
 
 The RC script sets the layer and via resistances. Supply voltages and
 current loads are applied separately by the solve test. Reading the .3dbx
@@ -225,7 +236,9 @@ The original RCX implementation supports only two bumps per assembly net.
 This example now meets that requirement; its package bumps belong to
 Chip A's local nets and are not additional assembly-net members.
 The GT2N files supplied here still do not include an RCX extraction model.
-The tests therefore continue to use explicit ODB setup and leave RCX unchanged.
+The tests therefore read the shared assembly bond rule in the Tcl setup script
+and create the resistors with existing ODB APIs. Reading this bond value does
+not require the missing technology extraction model or changes to RCX.
 
 Resistance assumptions
 ----------------------

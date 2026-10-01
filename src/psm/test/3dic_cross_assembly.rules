@@ -1,4 +1,4 @@
-# Synthetic assembly rule used only by this regression.
+# Synthetic assembly rule shared by the Nangate RCX and GT2N PSM tests.
 # Format reused from src/rcx/src/interChipModel.cpp.
 
 # One limitation: the current code accepts one HBV resistance and

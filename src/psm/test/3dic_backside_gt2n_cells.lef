@@ -6,6 +6,12 @@ DIVIDERCHAR "/" ;
 # All routing layers come from the unchanged GT2N technology LEF.
 # Dimensions are microns. Bump height and a manufactured TSV structure are
 # not described here; the bridge is a two-sided electrical test model.
+# The goal is to test PSM connectivity and voltage calculations, not to
+# propose a new LEF standard or a GT2N TSV manufacturing specification.
+#
+# Reference paths in these comments are relative to the OpenROAD repo root.
+# Technology: test/gt2n_data/gt2_tech.lef supplies the frontside RDL and
+# backside BRDL layers. test/gt2n_data/README.md records the GT2N file source.
 UNITS
   DATABASE MICRONS 2000 ;
 END UNITS
@@ -14,6 +20,11 @@ PROPERTYDEFINITIONS
   MACRO LEF58_BACKSIDE_BRIDGE STRING ;
 END PROPERTYDEFINITIONS
 
+# Bump model reference: test/Nangate45/fake_bumps.lef, MACRO BUMP.
+# It uses CLASS COVER BUMP and a PIN PAD with a rectangular metal contact.
+# We use that modeling pattern with GT2N RDL/BRDL instead of metal5.
+# Our 1.6 x 1.6 micron contacts match the RDL/BRDL routing width, but their
+# square shape and size are test choices, not a GT2N bump specification.
 MACRO GT2N_TEST_BUMP_FRONT
   CLASS COVER BUMP ;
   ORIGIN 0 0 ;
@@ -44,10 +55,20 @@ MACRO GT2N_TEST_BUMP_BACK
   END PAD
 END GT2N_TEST_BUMP_BACK
 
-# Each supply gets its own small bridge cell and its own visible boundary.
+# Bridge model reference: src/psm/test/backside_data/backside.lef,
+# MACRO bridge_tap. It puts frontside M1 and backside B1 contacts under
+# the same power pin and marks the cell with LEF58_BACKSIDE_BRIDGE.
+# We use that connection pattern with RDL and BRDL, split into one cell
+# for VDD and one for VSS so each has its own visible boundary.
+# src/odb/test/lef58_backside_bridge.lef and its matching .tcl test show
+# that OpenDB reads this property and exposes it through isBacksideBridge().
+# These references establish the software model, not a physical TSV design.
+#
+# The 2 x 2 micron cell size and 0.2 micron contact inset are test choices.
+# No supplied GT2N TSV specification establishes these dimensions.
 # Each cell has ONE pin with an RDL contact and a BRDL contact at the same x/y.
-# PSM's BridgeConnection supplies the model's fixed 0.001 ohm bridge edge;
-# these are synthetic models, not GT2N-provided or characterized TSV cells.
+# PSM's BridgeConnection in src/psm/src/connection.h supplies the model's
+# fixed 0.001 ohm bridge edge; it is not extracted from this geometry.
 MACRO GT2N_TEST_TSV_VDD
   CLASS BLOCK ;
   ORIGIN 0 0 ;

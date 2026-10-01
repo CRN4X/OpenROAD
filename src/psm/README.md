@@ -33,8 +33,10 @@ local DEF power nets; they are not assembly-net members. All six physical
 bumps remain in the layout, and PSM can still supply Chip A at its local
 backside ports.
 
-The script sets each bond resistance to **0.1 ohm**, an explicit test value.
-It does not extract a physical resistance or read an assembly rules file.
+The script reads the first `HBV` resistance from `3dic_cross_assembly.rules`
+next to it and assigns that value to both bond resistors. This shares the
+same input file with the Nangate RCX tests. The supplied **0.1 ohm** is an
+explicit test value; the script reads it without running RCX extraction.
 For real chips, use characterized PDK or package values. Source it once,
 before running PSM analysis, in a freshly loaded example. It reports an
 error if power-net resistor objects already exist. The separate RC script

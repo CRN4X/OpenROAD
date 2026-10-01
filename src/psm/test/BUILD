@@ -189,6 +189,7 @@ filegroup(
 )
 
 BACKSIDE_TSV_RESOURCES = [
+    "3dic_cross_assembly.rules",
     "3dic_backside_tsv_connections_setup.tcl",
     "3dic_helpers.tcl",
     "3dic_backside_tsv.3dbv",
@@ -207,6 +208,7 @@ BACKSIDE_TSV_RESOURCES = [
 ]
 
 BACKSIDE_TSV_BROKEN_RESOURCES = [
+    "3dic_cross_assembly.rules",
     "3dic_backside_tsv_connections_setup.tcl",
     "3dic_helpers.tcl",
     "3dic_backside_tsv_a.def",
