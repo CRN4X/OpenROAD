@@ -4,6 +4,8 @@
 %include "../../Exception.i"
 %{
 #include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include <vector>
 #include "psm/pdnsim.h"
 #include "sta/Scene.hh"
 
@@ -44,7 +46,35 @@ using sta::Scene;
   }
 }
 
+%typemap(out) std::vector<odb::dbChipRSeg*> {
+  Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
+  for (auto* resistor : $1) {
+    Tcl_ListObjAppendElement(interp, list,
+        SWIG_NewPointerObj(resistor, $descriptor(odb::dbChipRSeg*), 0));
+  }
+  Tcl_SetObjResult(interp, list);
+}
+
 %inline %{
+
+// ODB's C++ collections are available even when its Tcl list wrappers are not.
+std::vector<odb::dbChipRSeg*>
+get_3d_chip_rsegs(odb::dbChipNet* net)
+{
+  std::vector<odb::dbChipRSeg*> resistors;
+  if (net) {
+    for (auto* resistor : net->getChipRSegs()) {
+      resistors.push_back(resistor);
+    }
+  }
+  return resistors;
+}
+
+int
+get_3d_chip_cap_node_count(odb::dbChipNet* net)
+{
+  return net ? net->getChipCapNodes().size() : 0;
+}
 
 
 void 
@@ -80,6 +110,64 @@ check_connectivity_cmd(odb::dbNet* net, bool floorplanning, const char* error_fi
 {
   PDNSim* pdnsim = getPDNSim();
   return pdnsim->checkConnectivity(net, floorplanning, error_file, !dont_require_bterm);
+}
+
+bool
+check_3d_power_grid_cmd(const char* chip_net_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->check3DPowerGrid(chip_net_name);
+}
+
+bool
+check_3d_g_matrix_cmd(const char* chip_net_name, bool require_tsv)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->check3DGMatrix(chip_net_name, require_tsv);
+}
+
+void
+add_3d_pdn_current_cmd(const char* chip_net_name,
+                       const char* chip_name,
+                       const char* port_name,
+                       double current)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->add3DPDNCurrent(chip_net_name, chip_name, port_name, current);
+}
+
+bool
+check_3d_j_vector_cmd(const char* chip_net_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->check3DJVector(chip_net_name);
+}
+
+void
+set_3d_pdn_voltage_source_cmd(const char* chip_net_name,
+                              const char* chip_name,
+                              const char* port_name,
+                              double voltage)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->set3DPDNVoltageSource(
+      chip_net_name, chip_name, port_name, voltage);
+}
+
+bool
+solve_3d_power_grid_cmd(const char* chip_net_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->solve3DPowerGrid(chip_net_name);
+}
+
+double
+get_3d_pdn_voltage_cmd(const char* chip_net_name,
+                       const char* chip_name,
+                       const char* port_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  return pdnsim->get3DPDNVoltage(chip_net_name, chip_name, port_name);
 }
 
 void
