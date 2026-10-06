@@ -8,6 +8,7 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "3dic_frontside",
     "aes_asap7_vdd",
     "aes_test_bterms_source_resistance",
     "aes_test_bterms",
@@ -64,6 +65,12 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
+        "3dic_frontside_a.bmap",
+        "3dic_frontside_a.def",
+        "3dic_frontside_assembly.rules",
+        "3dic_frontside_assembly.v",
+        "3dic_frontside_b.bmap",
+        "3dic_frontside_b.def",
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",

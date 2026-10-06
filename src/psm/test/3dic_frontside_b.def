@@ -89,8 +89,13 @@ VIAS 5 ;
     - via4_5_960_340_1_2_600_600 + VIARULE Via4Array-0 + CUTSIZE 280 280  + LAYERS metal4 via4 metal5  + CUTSPACING 320 320  + ENCLOSURE 0 0 0 0  + ROWCOL 1 2  ;
     - via5_6_960_340_1_2_600_600 + VIARULE Via5Array-0 + CUTSIZE 280 280  + LAYERS metal5 via5 metal6  + CUTSPACING 320 320  + ENCLOSURE 0 0 40 0  + ROWCOL 1 2  ;
 END VIAS
-COMPONENTS 3 ;
+COMPONENTS 8 ;
     - buf_inst BUF_X1 + PLACED ( 119700 39200 ) N ;
+    - bump_clk BUMP + FIXED ( 21000 121000 ) N ;
+    - bump_d BUMP + FIXED ( 91000 121000 ) N ;
+    - bump_q BUMP + FIXED ( 161000 181000 ) N ;
+    - bump_vdd BUMP + FIXED ( 140140 42000 ) N ;
+    - bump_vss BUMP + FIXED ( 60140 39200 ) N ;
     - ff DFF_X1 + PLACED ( 39900 39200 ) N ;
     - inv INV_X1 + PLACED ( 79800 39200 ) N ;
 END COMPONENTS
@@ -105,15 +110,15 @@ PINS 5 ;
         + FIXED ( 60140 100800 ) N ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal5 ( -10000 -10000 ) ( 10000 10000 )
-        + FIXED ( 21000 121000 ) N ;
+        + LAYER metal4 ( -1000 -1000 ) ( 1000 1000 )
+        + FIXED ( 29000 121000 ) N ;
     - d + NET d + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal5 ( -10000 -10000 ) ( 10000 10000 )
-        + FIXED ( 91000 121000 ) N ;
+        + LAYER metal4 ( -1000 -1000 ) ( 1000 1000 )
+        + FIXED ( 91000 129000 ) N ;
     - q + NET q + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal5 ( -10000 -10000 ) ( 10000 10000 )
+        + LAYER metal4 ( -1000 -1000 ) ( 1000 1000 )
         + FIXED ( 161000 181000 ) N ;
 END PINS
 SPECIALNETS 2 ;
@@ -134,24 +139,25 @@ SPECIALNETS 2 ;
       NEW metal2 0 + SHAPE STRIPE ( 60140 39200 ) via2_3_960_340_1_3_320_320
       NEW metal1 0 + SHAPE STRIPE ( 60140 39200 ) via1_2_960_340_1_3_300_300 ;
 END SPECIALNETS
-NETS 5 ;
-    - clk ( PIN clk ) ( ff CK ) + USE SIGNAL
-      + ROUTED metal3 ( 36590 40460 ) ( 43130 * )
-      NEW metal5 ( 30430 111020 0 ) ( 36590 * )
-      NEW metal4 ( 36590 40460 ) ( * 111020 )
-      NEW metal3 ( 36590 40460 ) via3_2
+NETS 7 ;
+    - VDD ( PIN VDD ) ( bump_vdd PAD ) + USE POWER ;
+    - VSS ( PIN VSS ) ( bump_vss PAD ) + USE GROUND ;
+    - clk ( PIN clk ) ( bump_clk PAD ) ( ff CK ) + USE SIGNAL
+      + ROUTED metal3 ( 28750 96740 ) ( 43130 * )
+      NEW metal2 ( 43130 40460 ) ( * 96740 )
+      NEW metal4 ( 28750 96740 ) ( * 120540 0 )
+      NEW metal3 ( 28750 96740 ) via3_2
+      NEW metal2 ( 43130 96740 ) via2_5
       NEW metal1 ( 43130 40460 ) via1_4
-      NEW metal2 ( 43130 40460 ) via2_5
-      NEW metal4 ( 36590 111020 ) via4_0 ;
-    - d ( PIN d ) ( ff D ) + USE SIGNAL
-      + ROUTED metal3 ( 41610 85540 ) ( 65150 * )
-      NEW metal2 ( 41610 40460 ) ( * 85540 )
-      NEW metal4 ( 65150 85540 ) ( * 119980 )
-      NEW metal5 ( 65150 119980 ) ( 81390 * 0 )
-      NEW metal2 ( 41610 85540 ) via2_5
-      NEW metal3 ( 65150 85540 ) via3_2
+      NEW metal4 ( 29000 121000 ) via4_0 ;
+    - d ( PIN d ) ( bump_d PAD ) ( ff D ) + USE SIGNAL
+      + ROUTED metal4 ( 90350 116620 ) ( * 128380 0 )
+      NEW metal2 ( 41610 40460 ) ( * 116620 )
+      NEW metal3 ( 41610 116620 ) ( 90350 * )
+      NEW metal3 ( 90350 116620 ) via3_2
       NEW metal1 ( 41610 40460 ) via1_4
-      NEW metal4 ( 65150 119980 ) via4_0 ;
+      NEW metal2 ( 41610 116620 ) via2_5
+      NEW metal4 ( 91000 129000 ) via4_0 ;
     - n1 ( inv A ) ( ff Q ) + USE SIGNAL
       + ROUTED metal2 ( 79990 40180 ) ( * 40460 )
       NEW metal3 ( 46170 40180 ) ( 79990 * )
@@ -167,13 +173,13 @@ NETS 5 ;
       NEW metal1 ( 80370 40180 ) via1_4
       NEW metal2 ( 119890 40180 ) via2_5
       NEW metal1 ( 119890 40460 ) via1_4 ;
-    - q ( PIN q ) ( buf_inst Z ) + USE SIGNAL
-      + ROUTED metal5 ( 150830 188300 ) ( 151390 * 0 )
-      NEW metal2 ( 120650 41580 ) ( * 188300 )
-      NEW metal3 ( 120650 188300 ) ( 150830 * )
-      NEW metal3 ( 150830 188300 ) via3_2
-      NEW metal4 ( 150830 188300 ) via4_0
+    - q ( PIN q ) ( bump_q PAD ) ( buf_inst Z ) + USE SIGNAL
+      + ROUTED metal4 ( 160350 179900 ) ( * 180460 0 )
+      NEW metal3 ( 120650 179900 ) ( 160350 * )
+      NEW metal2 ( 120650 41580 ) ( * 179900 )
+      NEW metal3 ( 160350 179900 ) via3_2
+      NEW metal2 ( 120650 179900 ) via2_5
       NEW metal1 ( 120650 41580 ) via1_7
-      NEW metal2 ( 120650 188300 ) via2_5 ;
+      NEW metal4 ( 161000 181000 ) via4_0 ;
 END NETS
 END DESIGN
