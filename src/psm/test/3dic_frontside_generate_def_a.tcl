@@ -13,16 +13,14 @@ read_liberty ../../../test/Nangate45/Nangate45_typ.lib
 read_verilog ./3dic_frontside_top.v
 
 
-# link_design flop_chip_a
-
-
-link_design flop_chip_b
+link_design flop_chip_a
 
 
 # we explicitly specify the die and core area because the existing bump in Nangate45 is 29um
 # If we proceed with utilization argument, then a very small chip will be produced
 # site name is given in Nangate45_tech.lef line 770 SITE...
-initialize_floorplan -die_area {0 0 100 100} -core_area {10 10 90 90} \
+# The larger die separates the signal bumps, including their offset PADs.
+initialize_floorplan -die_area {0 0 130 130} -core_area {10 10 90 90} \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 
 
@@ -73,7 +71,25 @@ check_power_grid -net VDD
 check_power_grid -net VSS
 
 
-# write_def 3dic_frontside_a.def
+# Create routing tracks.
+make_tracks
+
+# Place signal ports on metal5, matching the bump PAD rectangles.
+
+place_pin -pin_name clk -layer metal5 -location {10.50 60.50} -pin_size {10 10}
+
+place_pin -pin_name d -layer metal5 -location {80.50 55.50} -pin_size {10 10}
+
+place_pin -pin_name q -layer metal5 -location {45.50 60.50} -pin_size {10 10}
+
+# Choose the layers available for signal routing.
+set_routing_layers -signal metal2-metal5
+
+# Plan the paths.
+global_route
+
+# Create the actual metal wires and vias.
+detailed_route
 
 
-write_def 3dic_frontside_b.def
+write_def 3dic_frontside_a.def
