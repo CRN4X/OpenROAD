@@ -241,19 +241,19 @@ $bump setOrigin $x [expr { $y + 60000 }]
 check "A detached M5 bump fails combined connectivity" {
   catch { check_3d_power_grid -net VDD } message
 } 1
-check "Disconnected bump diagnostic" { set message } PSM-0140
+check "Disconnected bump diagnostic" { set message } PSM-0153
 $bump setOrigin $x $y
 $bump setPlacementStatus $placement_status
 check "Restored M5 bump reconnects the assembly" { check_3d_power_grid -net VDD } 1
 
-# A graph walk must also catch a disconnected cell inside a chiplet.
+# The local connectivity check must catch a disconnected cell inside a chiplet.
 set inst [$block findInst ff]
 lassign [$inst getOrigin] x y
 $inst setOrigin $x [expr { $y + 10000 }]
 check "A detached M1 cell fails combined connectivity" {
   catch { check_3d_power_grid -net VDD } message
 } 1
-check "Disconnected cell diagnostic" { set message } PSM-0140
+check "Disconnected cell diagnostic" { set message } PSM-0153
 $inst setOrigin $x $y
 check "Restored cell reconnects the assembly" { check_3d_power_grid -net VDD } 1
 

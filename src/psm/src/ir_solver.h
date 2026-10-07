@@ -106,9 +106,7 @@ class IRSolver
 
   odb::dbNet* getNet() const { return net_; };
 
-  // Assembly analysis checks opens across chiplets instead of inside each
-  // chiplet.
-  bool check(bool check_bterms, bool check_placed, bool check_open = true);
+  bool check(bool check_bterms, bool check_placed);
 
   void solve(sta::Scene* corner,
              GeneratedSourceType source_type,
