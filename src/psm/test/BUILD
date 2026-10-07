@@ -9,6 +9,15 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "3dic_frontside",
+    "3dic_frontside_analyze_arguments",
+    "3dic_frontside_analyze_em",
+    "3dic_frontside_analyze_error_file",
+    "3dic_frontside_analyze_voltage_file",
+    "3dic_frontside_check_error_file",
+    "3dic_frontside_check_floorplanning",
+    "3dic_frontside_check_terminals",
+    "3dic_frontside_invalidation",
+    "3dic_frontside_sta",
     "aes_asap7_vdd",
     "aes_test_bterms_source_resistance",
     "aes_test_bterms",
@@ -65,6 +74,8 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
+        "3dic_frontside.3dbv",
+        "3dic_frontside.3dbx",
         "3dic_frontside_a.bmap",
         "3dic_frontside_a.def",
         "3dic_frontside_assembly.rules",
