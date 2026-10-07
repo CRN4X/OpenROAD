@@ -79,10 +79,9 @@ loaded with `read_3dbx`. PSM joins their power grids at the bump contacts using
 the bond resistors already stored in OpenDB. RCX extraction with technology
 and assembly rules can create those resistors.
 
-The command detects disconnected cell power pins, wires, and bumps across the
-assembly. It also runs the existing 2D checks for shorts and boundary terminals
-inside each chiplet. An island inside one chiplet can connect through another
-chiplet, so connectivity is checked across the whole assembly.
+The command runs the existing 2D checks for opens, shorts, and boundary
+terminals inside each chiplet, then checks connectivity across the assembly.
+Each chiplet's supply grid must be connected internally.
 
 ```tcl
 check_3d_power_grid

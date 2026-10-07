@@ -122,7 +122,7 @@ PDNSim::IRDropByPoint IRSolver::getIRDrop(odb::dbTechLayer* layer,
   return ir_drop;
 }
 
-bool IRSolver::check(bool check_bterms, bool check_placed, bool check_open)
+bool IRSolver::check(bool check_bterms, bool check_placed)
 {
   const utl::DebugScopedTimer timer(logger_, utl::PSM, "timer", 1, "Check: {}");
   if (connected_.has_value()) {
@@ -149,7 +149,7 @@ bool IRSolver::check(bool check_bterms, bool check_placed, bool check_open)
       reportMissingBTerm();
       connected_ = false;
     }
-    if (check_open && !checkOpen()) {
+    if (!checkOpen()) {
       reportUnconnectedNodes();
       connected_ = false;
     }

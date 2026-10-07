@@ -361,9 +361,7 @@ void PDNSim::check3DConnectivity(IRNetwork3D& network,
         network.getInterDieConnectionCount());
   }
 
-  // Reuse the local short and boundary-terminal checks. Local islands can
-  // connect through another chiplet, so opens are checked on the whole
-  // assembly.
+  // Reuse the existing 2D connectivity checks inside each chiplet.
   bool local_ok = true;
   for (const auto& [chiplet, net] : network.getChipletNets()) {
     IRSolver local(net,
@@ -379,7 +377,7 @@ void PDNSim::check3DConnectivity(IRNetwork3D& network,
              << " (coordinates in local microns)\n";
     }
     try {
-      if (!local.check(require_bterm, !floorplanning, false)) {
+      if (!local.check(require_bterm, !floorplanning)) {
         local_ok = false;
       }
     } catch (const std::runtime_error& error) {
