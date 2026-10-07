@@ -35,7 +35,19 @@
 [INFO RCX-0442] 100% of 18 wires extracted
 [INFO RCX-0045] Extract 5 nets, 28 rsegs, 28 caps, 1 ccs
 [INFO RCX-0533] Extracted 4 inter-chip bonds.
-[ERROR PSM-0140] The 3D power grid for VDD is disconnected.
+[WARNING PSM-0038] Unconnected shape on net VDD at (19.950um, 25.915um) - (20.190um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (20.190um, 25.580um) - (20.260um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (20.260um, 25.915um) - (20.955um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (20.955um, 25.680um) - (21.025um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (21.025um, 25.915um) - (21.560um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (21.560um, 25.500um) - (21.630um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (21.630um, 25.915um) - (22.295um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.295um, 25.700um) - (22.430um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.430um, 25.915um) - (22.855um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.855um, 25.585um) - (22.925um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.925um, 25.915um) - (23.180um, 26.085um), layer: metal1.
+[WARNING PSM-0039] Unconnected instance ff/VDD at location (21.605um, 25.872um).
+[ERROR PSM-0153] A chiplet power grid on VDD failed the local checks.
 [WARNING PSM-0043] Shorted shape on net VDD to net VSS at (39.900um, 19.515um) - (40.070um, 19.685um), layer: metal1.
 [WARNING PSM-0043] Shorted shape on net VDD to net n1 at (39.960um, 20.160um) - (40.030um, 20.300um), layer: metal1.
 [WARNING PSM-0043] Shorted shape on net VDD to terminal inv/A (net n1) at (39.960um, 20.125um) - (40.065um, 20.300um), layer: metal1.

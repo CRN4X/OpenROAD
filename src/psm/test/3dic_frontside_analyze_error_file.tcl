@@ -52,7 +52,7 @@ $cell setOrigin $x [expr { $y + 10000 }]
 check "Analysis rejects a detached cell" {
   catch { analyze_3d_power_grid -net VDD -error_file $errors } message
 } 1
-check "Analysis open error" { set message } PSM-0140
+check "Analysis open error" { set message } PSM-0153
 check "Analysis open report identifies the disconnected cell" {
   expr {[string first chipB/ [contents $errors]] >= 0
     && [string first ff [contents $errors]] >= 0}

@@ -23,7 +23,7 @@ $cell setOrigin $x [expr { $y + 10000 }]
 check "A detached cell fails and writes an error report" {
   catch { check_3d_power_grid -net VDD -error_file $errors } message
 } 1
-check "Disconnected cell error" { set message } PSM-0140
+check "Disconnected cell error" { set message } PSM-0153
 check "Open report names the affected chiplet and cell" {
   expr {[string first chipB/ [contents $errors]] >= 0
     && [string first ff [contents $errors]] >= 0}

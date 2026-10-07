@@ -36,7 +36,7 @@ $cell setOrigin $x [expr { $y + 10000 }]
 check "Disabling the terminal requirement still detects disconnected cells" {
   catch { check_3d_power_grid -net VDD -dont_require_terminals } message
 } 1
-check "Disconnected cell diagnostic" { set message } PSM-0140
+check "Disconnected cell diagnostic" { set message } PSM-0153
 $cell setOrigin $x $y
 $bpin setPlacementStatus $status
 check "Restored boundary pin passes the default check" {

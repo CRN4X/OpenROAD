@@ -14,7 +14,7 @@ $cell setOrigin $x [expr { $y + 10000 }]
 check "Default check detects a detached placed cell" {
   catch { check_3d_power_grid -net VDD } message
 } 1
-check "Disconnected cell error" { set message } PSM-0140
+check "Disconnected cell error" { set message } PSM-0153
 check "Floorplanning ignores non-fixed cells" {
   check_3d_power_grid -net VDD -floorplanning
 } 1
@@ -29,7 +29,7 @@ $bump setPlacementStatus FIRM
 check "Floorplanning still rejects a disconnected fixed bump" {
   catch { check_3d_power_grid -net VDD -floorplanning } message
 } 1
-check "Floorplanning disconnected bump diagnostic" { set message } PSM-0140
+check "Floorplanning disconnected bump diagnostic" { set message } PSM-0153
 $bump setPlacementStatus PLACED
 $bump setOrigin $bump_x $bump_y
 $bump setPlacementStatus $status

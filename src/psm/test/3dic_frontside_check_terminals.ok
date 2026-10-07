@@ -38,7 +38,19 @@
 [ERROR PSM-0025] VDD does not contain any terminals
 [ERROR PSM-0153] A chiplet power grid on VDD failed the local checks.
 [INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
-[ERROR PSM-0140] The 3D power grid for VDD is disconnected.
+[WARNING PSM-0038] Unconnected shape on net VDD at (19.950um, 25.915um) - (20.190um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (20.190um, 25.580um) - (20.260um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (20.260um, 25.915um) - (20.955um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (20.955um, 25.680um) - (21.025um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (21.025um, 25.915um) - (21.560um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (21.560um, 25.500um) - (21.630um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (21.630um, 25.915um) - (22.295um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.295um, 25.700um) - (22.430um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.430um, 25.915um) - (22.855um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.855um, 25.585um) - (22.925um, 26.085um), layer: metal1.
+[WARNING PSM-0038] Unconnected shape on net VDD at (22.925um, 25.915um) - (23.180um, 26.085um), layer: metal1.
+[WARNING PSM-0039] Unconnected instance ff/VDD at location (21.605um, 25.872um).
+[ERROR PSM-0153] A chiplet power grid on VDD failed the local checks.
 [INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
 Summary 7 / 7 (100% pass)
 pass
