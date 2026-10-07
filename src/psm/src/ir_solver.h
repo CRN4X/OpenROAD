@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <iosfwd>
 #include <map>
 #include <memory>
 #include <optional>
@@ -36,6 +37,29 @@ class EstimateParasitics;
 namespace psm {
 class IRNetwork;
 class IRShort;
+
+// Both single-chip and assembly analysis use the same layer resistance values.
+Connection::ResistanceMap getLayerResistanceMap(
+    odb::dbNet* net,
+    sta::Scene* corner,
+    est::EstimateParasitics* estimate_parasitics,
+    utl::Logger* logger);
+
+// Shared report formatting. Prefixes identify chiplets in assembly reports;
+// coordinates remain local to each chiplet and are written in microns.
+void writeVoltageHeader(std::ostream& report);
+void writeVoltageRow(std::ostream& report,
+                     const ITermNode* node,
+                     double voltage,
+                     const std::string& prefix = "");
+void writeEMHeader(std::ostream& report);
+void writeEMRow(std::ostream& report,
+                const Connection* connection,
+                double current,
+                double dbu0,
+                double dbu1,
+                const std::string& prefix0 = "",
+                const std::string& prefix1 = "");
 
 class IRSolver
 {
@@ -82,7 +106,9 @@ class IRSolver
 
   odb::dbNet* getNet() const { return net_; };
 
-  bool check(bool check_bterms, bool check_placed);
+  // Assembly analysis checks opens across chiplets instead of inside each
+  // chiplet.
+  bool check(bool check_bterms, bool check_placed, bool check_open = true);
 
   void solve(sta::Scene* corner,
              GeneratedSourceType source_type,
@@ -100,6 +126,7 @@ class IRSolver
   void enableGui(bool enable);
 
   void writeErrorFile(const std::string& error_file) const;
+  void writeErrorFile(std::ofstream& report) const;
   void writeInstanceVoltageFile(const std::string& voltage_file,
                                 sta::Scene* corner) const;
   void writeEMFile(const std::string& em_file, sta::Scene* corner) const;
@@ -122,11 +149,6 @@ class IRSolver
   Voltage getNetVoltage(sta::Scene* corner) const;
   std::optional<Voltage> getVoltage(sta::Scene* corner, Node* node) const;
 
-  std::optional<Voltage> getSDCVoltage(sta::Scene* corner,
-                                       odb::dbNet* net) const;
-  std::optional<Voltage> getPVTVoltage(sta::Scene* corner) const;
-  std::optional<Voltage> getUserVoltage(sta::Scene* corner,
-                                        odb::dbNet* net) const;
   std::optional<Voltage> getSolutionVoltage(sta::Scene* corner) const;
 
   odb::dbNet* getPowerNet() const;
@@ -175,7 +197,6 @@ class IRSolver
   // shapes of the layer so it cannot be done per object checked against it.
   const IRNetwork::ShapeTree* getShortCheckTree(odb::dbTechLayer* layer) const;
 
-  odb::PtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner) const;
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
   Connection::ConnectionMap<Current> generateCurrentMap(
@@ -264,5 +285,17 @@ class IRSolver
   static constexpr size_t kMaxShortEntries = 10000;
   static constexpr const char* kMarkerCategory = "PSM";
 };
+
+// Read the nominal supply voltage without constructing a solver or network.
+double getNominalVoltage(odb::dbNet* net,
+                         sta::Scene* corner,
+                         sta::dbSta* sta,
+                         const IRSolver::UserVoltages& user_voltages,
+                         utl::Logger* logger);
+
+// OpenSTA power estimates for the leaf cells in the active timing design.
+odb::PtrMap<odb::dbInst, float> getInstancePower(sta::dbSta* sta,
+                                                 sta::Scene* corner,
+                                                 utl::Logger* logger);
 
 }  // namespace psm

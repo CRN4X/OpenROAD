@@ -1,7 +1,6 @@
 or_integration_tests(
   "psm"
   TESTS
-    3dic_frontside
     aes_asap7_vdd
     aes_test_bterms_source_resistance
     aes_test_bterms

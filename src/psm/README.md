@@ -72,6 +72,107 @@ check_power_grid
 | `-error_file` | File to write power grid errors to. |
 | `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. |
 
+### Check 3D Power Grid
+
+Check whether the selected power or ground net is connected across the chiplets
+loaded with `read_3dbx`. PSM joins their power grids at the bump contacts using
+the bond resistors already stored in OpenDB. RCX extraction with technology
+and assembly rules can create those resistors.
+
+The command detects disconnected cell power pins, wires, and bumps across the
+assembly. It also runs the existing 2D checks for shorts and boundary terminals
+inside each chiplet. An island inside one chiplet can connect through another
+chiplet, so connectivity is checked across the whole assembly.
+
+```tcl
+check_3d_power_grid
+    -net net_name
+    [-floorplanning]
+    [-error_file error_file]
+    [-dont_require_terminals]
+```
+
+| Switch | Description |
+| --- | --- |
+| `-net` | Assembly supply net. Requires at least two chiplet PDNs and an inter-chip resistor. |
+| `-floorplanning` | Ignore non-fixed instances, as in 2D checking. Bond bump instances must be fixed. |
+| `-error_file` | Write a text report of connectivity errors, grouped by chiplet. Coordinates are local to each chiplet. |
+| `-dont_require_terminals` | Skip requiring a placed boundary pin on each chiplet's supply net. This does not skip checking disconnected wires, bumps, or cell pins. |
+
+### Set PDNSim Chiplet Voltage
+
+Set the external source voltage, the chiplet's nominal voltage, or both.
+Provide `-port` with `-voltage`, `-nominal_voltage`, or both.
+The `-port` and `-voltage` pair holds a chiplet port at a fixed voltage.
+The source port must have a single modeled pin shape. Setting the same source
+and corner again replaces that voltage.
+
+Use `-nominal_voltage` on the assembly power net to set the voltage used in
+`I = P / V` for that chiplet. The assembly's bump mapping identifies the local
+power net, so its name does not have to match the assembly net name. A call
+with only `-nominal_voltage` does not create or change an external source.
+This lets a chiplet receiving power from another chiplet have its own nominal
+voltage without becoming a source itself. All voltages are in **volts**,
+independently of display units.
+
+```tcl
+set_pdnsim_chiplet_voltage
+    -net net_name
+    -chiplet chipA
+    [-port port]
+    [-voltage voltage]
+    [-nominal_voltage voltage]
+    [-corner corner]
+```
+
+| Switch | Description |
+| --- | --- |
+| `-net` | Assembly supply net. For `-nominal_voltage`, select the power net, such as VDD. |
+| `-chiplet` | Placed chiplet name from the `.3dbx` whose source or nominal voltage is being set. |
+| `-port` | Chiplet boundary port receiving the external supply. Requires `-voltage`. |
+| `-voltage` | Fixed source voltage in volts. Requires `-port`. |
+| `-nominal_voltage` | Positive voltage used to convert the chiplet's cell power into current for both power and ground analysis. Does not change the Liberty power model. |
+| `-corner` | Corner to use these settings. Defaults to the current corner. Set a source for each corner that will be analyzed. |
+
+### Analyze 3D Power Grid
+
+Solve the selected assembly power or ground net and report its voltage range.
+Load the assembly and bond resistors first, then set the external supply with
+`set_pdnsim_chiplet_voltage`. OpenSTA supplies the cell loads from the Liberty
+power models and the design's clock and switching activity. Saved PSM
+instance-power settings replace the corresponding STA estimates. A value for
+the selected corner takes precedence over a default value.
+
+The selected corner supplies the cell power, nominal supply voltage, layer
+resistance, and source settings. Cell current is calculated as `I = P / V`;
+setting a source voltage does not change the nominal voltage used in this
+calculation.
+
+Flat assemblies with a supported OpenSTA timing network are required.
+VDD and VSS are solved separately. Before solving, PSM checks connectivity
+across the assembly and shorts inside each chiplet. Missing sources and
+invalid resistances are rejected. Each call builds a fresh solution.
+3D heatmaps and checks for shorts between different chiplets are not supported.
+
+```tcl
+analyze_3d_power_grid
+    -net net_name
+    [-corner corner]
+    [-error_file error_file]
+    [-voltage_file voltage_file]
+    [-enable_em]
+    [-em_outfile em_file]
+```
+
+| Switch | Description |
+| --- | --- |
+| `-net` | Assembly power or ground net name. |
+| `-corner` | Corner to use for analysis. Defaults to the current corner. |
+| `-error_file` | Write connectivity errors to a text report grouped by chiplet, using local coordinates. |
+| `-voltage_file` | Write terminal voltages in the 2D CSV format. Instance names include the chiplet, such as `chipA/ff`. Coordinates are in local microns; voltage is in volts. |
+| `-enable_em` | Report maximum and average resistor current, including inter-chip bonds. This reports currents, not a check against manufacturing EM limits. |
+| `-em_outfile` | Write resistor currents in the 2D CSV format. Requires `-enable_em`. Layer names include the chiplet at each endpoint, such as `chipA/metal5`. Coordinates are in local microns; current is in amperes. |
+
 ### Write Spice Power Grid
 
 This command writes the `spice` file for power grid.

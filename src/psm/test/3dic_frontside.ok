@@ -39,5 +39,28 @@
 [INFO PSM-0040] All shapes on net VSS are connected.
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0040] All shapes on net VSS are connected.
-Summary 85 / 85 (100% pass)
+[INFO PSM-0104] Built 3D power grid VSS: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
+[INFO PSM-0111] Built combined 3D G matrix VSS: 112 nodes, 354 nonzero entries, and 1 inter-die connections.
+[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
+[INFO PSM-0111] Built combined 3D G matrix VDD: 112 nodes, 354 nonzero entries, and 1 inter-die connections.
+[ERROR PSM-0138] No voltage source is defined for 3D net VDD.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 0 current loads, 1 fixed-voltage sources, and voltage range 1 to 1 V.
+[INFO PSM-0129] Solved combined 3D power grid VSS: 112 nodes, 0 current loads, 1 fixed-voltage sources, and voltage range 0 to 0 V.
+[ERROR PSM-0118] Terminal chipB/ff/VSS is not on assembly net VDD.
+[INFO PSM-0120] Built combined 3D J vector VDD: 6 loads and -0.003 A total current.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0.816777 to 1 V.
+[INFO PSM-0120] Built combined 3D J vector VSS: 6 loads and 0.003 A total current.
+[INFO PSM-0129] Solved combined 3D power grid VSS: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0 to 0.12049 V.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0.688013 to 1 V.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0.816777 to 1 V.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0.816577 to 1 V.
+[ERROR PSM-0096] dbChipRSeg on VDD must have positive resistance.
+[ERROR PSM-0130] No 3D voltage solution is available for VDD.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 0.816777 to 1 V.
+[ERROR PSM-0140] The 3D power grid for VDD is disconnected.
+[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
+[ERROR PSM-0140] The 3D power grid for VDD is disconnected.
+[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
+[ERROR PSM-0103] 3D power grid VDD has 2 chiplet PDNs and 0 inter-die connections.
+Summary 133 / 133 (100% pass)
 pass

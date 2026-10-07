@@ -32,6 +32,100 @@ proc check_power_grid { args } {
     $dont_require_bterm
 }
 
+sta::define_cmd_args "check_3d_power_grid" {
+  -net net_name
+  [-floorplanning]
+  [-error_file error_file]
+  [-dont_require_terminals]
+}
+
+proc check_3d_power_grid { args } {
+  sta::parse_key_args "check_3d_power_grid" args keys {-net -error_file} \
+    flags {-floorplanning -dont_require_terminals}
+  sta::check_argc_eq0 "check_3d_power_grid" $args
+
+  if { ![info exists keys(-net)] } {
+    utl::error PSM 105 "Argument -net not specified."
+  }
+  set error_file ""
+  if { [info exists keys(-error_file)] } {
+    set error_file $keys(-error_file)
+  }
+  return [psm::check_3d_power_grid_cmd $keys(-net) \
+    [info exists flags(-floorplanning)] $error_file \
+    [expr { ![info exists flags(-dont_require_terminals)] }]]
+}
+
+sta::define_cmd_args "set_pdnsim_chiplet_voltage" {
+  -net net_name
+  -chiplet chipA
+  [-port port]
+  [-voltage voltage]
+  [-nominal_voltage voltage]
+  [-corner corner]
+}
+
+proc set_pdnsim_chiplet_voltage { args } {
+  sta::parse_key_args "set_pdnsim_chiplet_voltage" args \
+    keys {-net -chiplet -port -voltage -nominal_voltage -corner} flags {}
+  sta::check_argc_eq0 "set_pdnsim_chiplet_voltage" $args
+
+  set set_source [expr { [info exists keys(-port)] || [info exists keys(-voltage)] }]
+  set required {-net -chiplet}
+  if { $set_source } { lappend required -port -voltage }
+  foreach key $required {
+    if { ![info exists keys($key)] } {
+      utl::error PSM 134 "Missing mandatory argument $key."
+    }
+  }
+  set port ""
+  set voltage 0.0
+  if { $set_source } {
+    sta::check_float "-voltage" $keys(-voltage)
+    set port $keys(-port)
+    set voltage $keys(-voltage)
+  }
+  set set_nominal [info exists keys(-nominal_voltage)]
+  set nominal_voltage 0.0
+  if { $set_nominal } {
+    sta::check_float "-nominal_voltage" $keys(-nominal_voltage)
+    set nominal_voltage $keys(-nominal_voltage)
+  }
+
+  psm::set_pdnsim_chiplet_voltage_cmd \
+    $keys(-net) $keys(-chiplet) $port $voltage \
+    [sta::parse_scene_or_default keys] $set_source $set_nominal $nominal_voltage
+}
+
+sta::define_cmd_args "analyze_3d_power_grid" {
+  -net net_name
+  [-corner corner]
+  [-error_file error_file]
+  [-voltage_file voltage_file]
+  [-enable_em]
+  [-em_outfile em_file]
+}
+
+proc analyze_3d_power_grid { args } {
+  sta::parse_key_args "analyze_3d_power_grid" args \
+    keys {-net -corner -error_file -voltage_file -em_outfile} flags {-enable_em}
+  sta::check_argc_eq0 "analyze_3d_power_grid" $args
+
+  if { ![info exists keys(-net)] } {
+    utl::error PSM 135 "Argument -net not specified."
+  }
+  foreach key {-error_file -voltage_file -em_outfile} {
+    if { ![info exists keys($key)] } { set keys($key) "" }
+  }
+  set enable_em [info exists flags(-enable_em)]
+  if { $keys(-em_outfile) ne "" && !$enable_em } {
+    utl::error PSM 154 "Use -enable_em when specifying -em_outfile."
+  }
+  return [psm::analyze_3d_power_grid_cmd \
+    $keys(-net) [sta::parse_scene_or_default keys] true \
+    $keys(-error_file) $keys(-voltage_file) $enable_em $keys(-em_outfile)]
+}
+
 sta::define_cmd_args "analyze_power_grid" {
   -net net_name
   [-corner corner]

@@ -1,4 +1,6 @@
-# Check the two frontside PDNs and extract the chip-to-chip bonds.
+# Check routing and solve both frontside PDNs with controlled test currents.
+# Internal PSM helpers supply known currents and inspect solver results.
+# The public analyze_3d_power_grid command always uses OpenSTA cell loads.
 source "helpers.tcl"
 
 # Load the two chiplets, their layouts, bumps, and connections.
@@ -104,4 +106,163 @@ foreach net [$top getChipNets] {
   set name [$net getName]
   check "$name: bump count" { $net getNumBumpInsts } [dict get $expected_counts $name]
 }
+# Exercise the combined network after the layout and extraction checks above.
+psm::clear_3d_power_grid_cmd
+set supply_bonds [dict create]
+foreach net [$top getChipNets] {
+  if { [$net getName] ni {VDD VSS} } { continue }
+  set segments [psm::get_3d_chip_rsegs $net]
+  check "[$net getName]: one RCX bond" { llength $segments } 1
+  dict set supply_bonds [$net getName] [lindex $segments 0]
+  check "[$net getName]: combined connectivity" {
+    check_3d_power_grid -net [$net getName]
+  } 1
+  check "[$net getName]: conductance matrix" {
+    psm::check_3d_g_matrix_cmd [$net getName]
+  } 1
+}
+
+# Sources are deliberate boundary conditions for this solver test. The package
+# itself is not modeled. Only Chip A receives fixed supply voltages.
+check "Missing source is rejected" {
+  catch { psm::analyze_3d_power_grid_cmd VDD [sta::cmd_scene] false } message
+} 1
+check "Missing source diagnostic" { set message } PSM-0138
+set_pdnsim_chiplet_voltage -net VDD -chiplet chipA -port VDD -voltage 1.0
+set_pdnsim_chiplet_voltage -net VSS -chiplet chipA -port VSS -voltage 0.0
+
+# With no loads, both chips must settle to their source voltage.
+foreach {net value} {VDD 1.0 VSS 0.0} {
+  check "$net: zero-load solve" { psm::analyze_3d_power_grid_cmd $net [sta::cmd_scene] false } 1
+  set voltage [psm::get_3d_pdn_voltage_cmd $net chipB ff/$net]
+  check "$net: zero-load voltage reaches Chip B's cell" {
+    expr {abs($voltage - $value) < 1.0e-8}
+  } 1
+}
+
+# Known loads make the expected bond drop calculable. These are test currents,
+# not OpenSTA power estimates: Chip A draws 1 mA, Chip B draws 2 mA.
+# Apply loads at the real M1 cell pins, not at the chip-level M6 ports.
+foreach {chip scale} {chipA 1 chipB 2} {
+  foreach {inst current} {ff 0.0004 inv 0.0002 buf_inst 0.0004} {
+    psm::add_3d_pdn_current_cmd VDD $chip $inst/VDD [expr { -$scale * $current }]
+    psm::add_3d_pdn_current_cmd VSS $chip $inst/VSS [expr { $scale * $current }]
+  }
+}
+check "A VSS pin cannot draw current from VDD" {
+  catch { psm::add_3d_pdn_current_cmd VDD chipB ff/VSS -0.001 } message
+} 1
+check "Wrong-net diagnostic" { set message } PSM-0118
+
+foreach net {VDD VSS} {
+  check "$net: cell current vector" { psm::check_3d_j_vector_cmd $net false } 1
+  check "$net: loaded solve" { psm::analyze_3d_power_grid_cmd $net [sta::cmd_scene] false } 1
+}
+set vdd_source [psm::get_3d_pdn_voltage_cmd VDD chipA VDD]
+set vss_source [psm::get_3d_pdn_voltage_cmd VSS chipA VSS]
+check "Chip A VDD is fixed at 1 V" { expr {abs($vdd_source - 1.0) < 1e-9} } 1
+check "Chip A VSS is fixed at 0 V" { expr {abs($vss_source) < 1e-9} } 1
+foreach chip {chipA chipB} {
+  foreach inst {ff inv buf_inst} {
+    set vdd [psm::get_3d_pdn_voltage_cmd VDD $chip $inst/VDD]
+    set vss [psm::get_3d_pdn_voltage_cmd VSS $chip $inst/VSS]
+    check "$chip/$inst: power reaches the M1 cell pins with voltage loss" {
+      expr {$vdd < 1.0 && $vss > 0.0 && $vdd > $vss}
+    } 1
+  }
+}
+# Query the actual bond endpoints. M6 port voltages also include local wiring
+# drops and therefore must not be used to measure only the bond resistance.
+foreach {net pin sign} {VDD bump_vdd/PAD 1 VSS bump_vss/PAD -1} {
+  set a [psm::get_3d_pdn_voltage_cmd $net chipA $pin]
+  set b [psm::get_3d_pdn_voltage_cmd $net chipB $pin]
+  set resistance [[dict get $supply_bonds $net] getResistance]
+  check "$net: bond drop equals Chip B current times bond resistance" {
+    expr {abs($sign * ($a - $b) - 0.002 * $resistance) < 1.0e-8}
+  } 1
+}
+set vdd_b_port [psm::get_3d_pdn_voltage_cmd VDD chipB VDD]
+check "Chip B's port is not an independent 1 V source" { expr {$vdd_b_port < 1.0} } 1
+
+# Override M1 resistance through the same EstimateParasitics API used by
+# set_layer_rc. Keep the LEF unchanged, so this tests the corner override.
+set block [[[$top findChipInst chipB] getMasterChip] getBlock]
+set layer [[$block getTech] findLayer metal1]
+set width_m [expr { double([$layer getWidth]) / [$block getDbUnitsPerMicron] * 1e-6 }]
+set scene [lindex [sta::scenes] 0]
+set before [psm::get_3d_pdn_voltage_cmd VDD chipB ff/VDD]
+est::set_layer_rc_cmd $layer $scene [expr { 2.0 * [$layer getResistance] / $width_m }] 0.0
+check "3D solve accepts the existing corner resistance override" {
+  psm::analyze_3d_power_grid_cmd VDD [sta::cmd_scene] false
+} 1
+set after [psm::get_3d_pdn_voltage_cmd VDD chipB ff/VDD]
+check "Higher M1 resistance increases cell voltage loss" { expr {$after < $before - 1e-6} } 1
+est::set_layer_rc_cmd $layer $scene 0.0 0.0
+check "Restoring LEF resistance succeeds" {
+  psm::analyze_3d_power_grid_cmd VDD [sta::cmd_scene] false
+} 1
+set restored [psm::get_3d_pdn_voltage_cmd VDD chipB ff/VDD]
+check "Restoring LEF resistance restores cell voltage" { expr {abs($restored - $before) < 1e-8} } 1
+
+# Changing an ODB resistor must affect the next solve; extraction is not rerun.
+set bond [dict get $supply_bonds VDD]
+set resistance [$bond getResistance]
+$bond setResistance [expr { 2.0 * $resistance }]
+check "Re-solve with doubled bond resistance" {
+  psm::analyze_3d_power_grid_cmd VDD [sta::cmd_scene] false
+} 1
+set a [psm::get_3d_pdn_voltage_cmd VDD chipA bump_vdd/PAD]
+set b [psm::get_3d_pdn_voltage_cmd VDD chipB bump_vdd/PAD]
+check "Doubled bond resistance doubles its voltage drop" {
+  expr {abs(($a - $b) - 0.002 * 2.0 * $resistance) < 1e-8}
+} 1
+$bond setResistance 0.0
+check "Zero bond resistance is rejected" {
+  catch { psm::analyze_3d_power_grid_cmd VDD [sta::cmd_scene] false } message
+} 1
+check "Invalid resistance diagnostic" { set message } PSM-0096
+check "Failed re-solve leaves no stale result" {
+  catch { psm::get_3d_pdn_voltage_cmd VDD chipA VDD } message
+} 1
+check "No stale solution diagnostic" { set message } PSM-0130
+$bond setResistance $resistance
+check "Solve after restoring the bond resistance" {
+  psm::analyze_3d_power_grid_cmd VDD [sta::cmd_scene] false
+} 1
+
+# Move the bump off its M5 landing. The M6 port remains connected, so this
+# specifically catches implementations that incorrectly attach the bond there.
+set block [[[$top findChipInst chipB] getMasterChip] getBlock]
+set bump [$block findInst bump_vdd]
+set placement_status [$bump getPlacementStatus]
+$bump setPlacementStatus PLACED
+lassign [$bump getOrigin] x y
+$bump setOrigin $x [expr { $y + 60000 }]
+check "A detached M5 bump fails combined connectivity" {
+  catch { check_3d_power_grid -net VDD } message
+} 1
+check "Disconnected bump diagnostic" { set message } PSM-0140
+$bump setOrigin $x $y
+$bump setPlacementStatus $placement_status
+check "Restored M5 bump reconnects the assembly" { check_3d_power_grid -net VDD } 1
+
+# A graph walk must also catch a disconnected cell inside a chiplet.
+set inst [$block findInst ff]
+lassign [$inst getOrigin] x y
+$inst setOrigin $x [expr { $y + 10000 }]
+check "A detached M1 cell fails combined connectivity" {
+  catch { check_3d_power_grid -net VDD } message
+} 1
+check "Disconnected cell diagnostic" { set message } PSM-0140
+$inst setOrigin $x $y
+check "Restored cell reconnects the assembly" { check_3d_power_grid -net VDD } 1
+
+# Delete only the bond: each local PDN is still intact, but the assembly is open.
+odb::dbChipRSeg_destroy $bond
+check "Missing bond fails combined connectivity" {
+  catch { check_3d_power_grid -net VDD } message
+} 1
+check "Missing bond diagnostic" { set message } PSM-0103
+psm::clear_3d_power_grid_cmd
+
 exit_summary
