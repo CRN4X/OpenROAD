@@ -20,18 +20,18 @@ set_power_activity -global -activity 0.1 -duty 0.5
 
 # Check connectivity inside each chiplet and between the two chiplets.
 foreach net {VDD VSS} {
-  check "$net: combined connectivity" { check_3d_power_grid -net $net } 1
+  check "$net: combined connectivity" { check_power_grid -net $net } 1
 }
 
 # Match the Nangate45 typical Liberty voltage for both chips' P/V conversion.
 set supply_voltage 1.1
 foreach chip {chipA chipB} {
-  set_pdnsim_chiplet_voltage -net VDD -chiplet $chip -nominal_voltage $supply_voltage
+  set_pdnsim_net_voltage -net VDD -chiplet $chip -nominal_voltage $supply_voltage
 }
 
 # Only Chip A receives fixed supply voltages. The package is not modeled.
-set_pdnsim_chiplet_voltage -net VDD -chiplet chipA -port VDD -voltage $supply_voltage
-set_pdnsim_chiplet_voltage -net VSS -chiplet chipA -port VSS -voltage 0.0
+set_pdnsim_net_voltage -net VDD -chiplet chipA -port VDD -voltage $supply_voltage
+set_pdnsim_net_voltage -net VSS -chiplet chipA -port VSS -voltage 0.0
 
 # All of Chip B's supply current passes through its single VDD/VSS bond pair.
 # Calculate that current independently from OpenSTA power: I = P / V.
@@ -57,7 +57,7 @@ foreach net [$top getChipNets] {
 # Compare only the bond endpoints; cell voltages also include local wiring drop.
 # VSS current returns from Chip B to Chip A, so its voltage difference is reversed.
 foreach {net pin sign} {VDD bump_vdd/PAD 1 VSS bump_vss/PAD -1} {
-  analyze_3d_power_grid -net $net
+  analyze_power_grid -net $net
   set a [psm::get_3d_pdn_voltage_cmd $net chipA $pin]
   set b [psm::get_3d_pdn_voltage_cmd $net chipB $pin]
   set expected_drop [expr { $chip_b_current * [dict get $bond_resistance $net] }]

@@ -42,12 +42,14 @@ class IRSolver3D
              est::EstimateParasitics* estimate_parasitics,
              sta::Scene* corner);
 
-  void build();
+  // Build G and J after constructing the network and adding the loads.
+  void buildCondMatrixAndVoltages();
   bool check() const;
   void addCurrentLoad(odb::dbChipInst* chip_inst,
                       const std::string& terminal,
                       Current current);
-  // Called after build(), using power from the active OpenSTA scene.
+  // Called after network construction, using power from the active OpenSTA
+  // scene.
   void addStaLoads(odb::dbNet* net,
                    const odb::PtrMap<odb::dbInst, float>& powers,
                    Voltage power_voltage);
@@ -100,8 +102,6 @@ class IRSolver3D
   };
 
   Connection::ResistanceMap getResistanceMap() const;
-  void buildConductanceMatrix();
-  void buildCurrentVector();
   bool buildSourceMap(std::map<std::size_t, Voltage>& sources) const;
 
   utl::Logger* logger_;

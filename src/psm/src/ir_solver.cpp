@@ -1415,18 +1415,10 @@ IRSolver::Power IRSolver::buildNodeCurrentMap(
   if (power_voltage == 0) {
     logger_->error(utl::PSM, 74, "Unable to determine voltage for power nets.");
   }
-  for (const auto& [inst, power] : getInstancePower(sta_, corner, logger_)) {
-    auto find_inst = inst_nodes.find(inst);
-    if (find_inst == inst_nodes.end()) {
-      continue;
-    }
-    instance_powers[inst] = power;
-    const Current current = power / power_voltage;
-    const auto& nodes = find_inst->second;
-    for (auto* node : nodes) {
-      currents[node] += current / nodes.size();
-    }
-  }
+  instance_powers = buildNodeCurrentMap(inst_nodes,
+                                        getInstancePower(sta_, corner, logger_),
+                                        power_voltage,
+                                        currents);
 
   for (const auto& [inst, powers] : user_powers_) {
     auto find_inst = inst_nodes.find(inst);
@@ -1458,19 +1450,41 @@ IRSolver::Power IRSolver::buildNodeCurrentMap(
   return total_power;
 }
 
-std::map<Node*, Connection::ConnectionSet> IRSolver::getNodeConnectionMap(
+odb::PtrMap<odb::dbInst, IRSolver::Power> IRSolver::buildNodeCurrentMap(
+    const odb::PtrMap<odb::dbInst, Node::NodeSet>& inst_nodes,
+    const odb::PtrMap<odb::dbInst, Power>& powers,
+    Voltage power_voltage,
+    ValueNodeMap<Current>& currents)
+{
+  odb::PtrMap<odb::dbInst, Power> instance_powers;
+  for (const auto& [inst, power] : powers) {
+    auto find_inst = inst_nodes.find(inst);
+    if (find_inst == inst_nodes.end()) {
+      continue;
+    }
+    instance_powers[inst] = power;
+    const Current current = power / power_voltage;
+    const auto& nodes = find_inst->second;
+    for (auto* node : nodes) {
+      currents[node] += current / nodes.size();
+    }
+  }
+  return instance_powers;
+}
+
+IRSolver::NodeConductances IRSolver::getNodeConnectionMap(
     const Connection::ConnectionMap<Connection::Conductance>& conductance) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/connection mapping: {}");
 
-  std::map<Node*, Connection::ConnectionSet> node_connections;
+  NodeConductances node_connections;
   for (const auto& [connection, cond] : conductance) {
     Node* node0 = connection->getNode0();
     Node* node1 = connection->getNode1();
 
-    node_connections[node0].insert(connection);
-    node_connections[node1].insert(connection);
+    node_connections[node0].emplace_back(connection, cond);
+    node_connections[node1].emplace_back(connection, cond);
   }
 
   return node_connections;
@@ -1498,18 +1512,18 @@ std::map<Node*, std::size_t> IRSolver::assignNodeIDs(const SourceNodes& nodes,
 }
 
 void IRSolver::buildCondMatrixAndVoltages(
-    bool is_ground,
-    const std::map<Node*, Connection::ConnectionSet>& node_connections,
+    bool negate_currents,
+    const NodeConductances& node_connections,
     const ValueNodeMap<Current>& currents,
-    const Connection::ConnectionMap<Connection::Conductance>& conductance,
     const std::map<Node*, std::size_t>& node_index,
     Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-    Eigen::VectorXd& j_vector) const
+    Eigen::VectorXd& j_vector,
+    utl::Logger* logger)
 {
   const utl::DebugScopedTimer timer(
-      logger_, utl::PSM, "timer", 1, "Build G and J: {}");
+      logger, utl::PSM, "timer", 1, "Build G and J: {}");
 
-  const bool print_progress = logger_->debugCheck(utl::PSM, "progress", 1);
+  const bool print_progress = logger->debugCheck(utl::PSM, "progress", 1);
   std::size_t count = 0;
   std::vector<Eigen::Triplet<Connection::Conductance>> cond_values;
   for (const auto& [node, connections] : node_connections) {
@@ -1523,24 +1537,23 @@ void IRSolver::buildCondMatrixAndVoltages(
     }
 
     Connection::Conductance node_cond = 0.0;
-    for (auto* conn : connections) {
+    for (const auto& [conn, cond] : connections) {
       Node* other = conn->getOtherNode(node);
       const std::size_t other_idx = node_index.at(other);
 
-      const Connection::Conductance cond = conductance.at(conn);
       node_cond += cond;
 
       cond_values.emplace_back(node_idx, other_idx, -cond);
     }
     cond_values.emplace_back(node_idx, node_idx, node_cond);
     if (print_progress && count % 1000 == 0) {
-      logger_->report(
+      logger->report(
           "Processed nodes: {} of {}", count, node_connections.size());
     }
     count++;
   }
   g_matrix.setFromTriplets(cond_values.begin(), cond_values.end());
-  if (!is_ground) {
+  if (negate_currents) {
     for (auto& j : j_vector) {
       j = -j;
     }
@@ -1549,26 +1562,23 @@ void IRSolver::buildCondMatrixAndVoltages(
 }
 
 void IRSolver::addSourcesToMatrixAndVoltages(
-    Voltage src_voltage,
-    const SourceNodes& sources,
-    const std::map<Node*, std::size_t>& node_index,
+    const std::vector<MatrixSource>& sources,
     Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-    Eigen::VectorXd& j_vector) const
+    Eigen::VectorXd& j_vector,
+    utl::Logger* logger)
 {
-  // Attach sources as current sources through a 1 ohm resistor
+  // Add an auxiliary current unknown and a fixed-voltage equation per source.
   const Connection::Resistance src_res = 1.0;
   const Connection::Conductance src_cond = 1.0 / src_res;
 
-  for (const auto& src_node : sources) {
-    const std::size_t idx = node_index.at(src_node.get());
+  for (const auto& source : sources) {
+    const std::size_t idx = source.source_index;
 
-    j_vector[idx] = src_voltage / src_res;
+    j_vector[idx] = source.voltage / src_res;
 
-    Node* real_node = src_node->getSource();
+    const std::size_t real_node_idx = source.node_index;
 
-    const std::size_t real_node_idx = node_index.at(real_node);
-
-    debugPrint(logger_,
+    debugPrint(logger,
                utl::PSM,
                "solve",
                2,
@@ -1647,8 +1657,7 @@ void IRSolver::solve(sta::Scene* corner,
     dumpConductance(conductance, "cond");
   }
 
-  std::map<Node*, Connection::ConnectionSet> node_connections
-      = getNodeConnectionMap(conductance);
+  NodeConductances node_connections = getNodeConnectionMap(conductance);
   Node::NodeSet all_nodes;
   for (const auto& [node, conns] : node_connections) {
     all_nodes.insert(node);
@@ -1661,7 +1670,13 @@ void IRSolver::solve(sta::Scene* corner,
       conductance[conn] = cond;
     }
     for (const auto& [node, conns] : getNodeConnectionMap(src_conductance)) {
-      node_connections[node].insert(conns.begin(), conns.end());
+      auto& connections = node_connections[node];
+      connections.insert(connections.end(), conns.begin(), conns.end());
+      std::sort(connections.begin(),
+                connections.end(),
+                [](const auto& lhs, const auto& rhs) {
+                  return Connection::Compare{}(lhs.first, rhs.first);
+                });
     }
   }
 
@@ -1694,62 +1709,85 @@ void IRSolver::solve(sta::Scene* corner,
   Eigen::VectorXd j_vector(num_nodes);
 
   // Build G and J
-  buildCondMatrixAndVoltages(src_voltage == 0.0,
+  buildCondMatrixAndVoltages(src_voltage != 0.0,
                              node_connections,
                              currents,
-                             conductance,
                              node_index,
                              g_matrix,
-                             j_vector);
-  addSourcesToMatrixAndVoltages(
-      src_voltage, src_nodes, node_index, g_matrix, j_vector);
+                             j_vector,
+                             logger_);
+  std::vector<MatrixSource> sources;
+  for (const auto& source : src_nodes) {
+    sources.push_back({node_index.at(source.get()),
+                       node_index.at(source->getSource()),
+                       src_voltage});
+  }
+  addSourcesToMatrixAndVoltages(sources, g_matrix, j_vector, logger_);
 
+  const Eigen::VectorXd v_vector
+      = solve(g_matrix, j_vector, logger_, node_index, network_.get());
+  for (const auto& [node, node_idx] : real_node_index) {
+    voltages[node] = v_vector[node_idx];
+  }
+  solution_voltages_[corner] = src_voltage;
+  solution_power_[corner] = total_power;
+}
+
+Eigen::VectorXd IRSolver::solve(
+    Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+    const Eigen::VectorXd& j_vector,
+    utl::Logger* logger,
+    const std::map<Node*, std::size_t>& node_index,
+    IRNetwork* debug_network)
+{
   Eigen::SparseLU<Eigen::SparseMatrix<Connection::Conductance>> eigen_solver;
 
-  debugPrint(logger_, utl::PSM, "solve", 1, "Factorizing the G matrix");
+  debugPrint(logger, utl::PSM, "solve", 1, "Factorizing the G matrix");
   eigen_solver.compute(g_matrix);
   if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
     // decomposition failed
-    if (logger_->debugCheck(utl::PSM, "dump", 1)) {
-      network_->dumpNodes(node_index);
-      dumpMatrix(g_matrix, "G");
-      dumpVector(j_vector, "J");
+    if (logger->debugCheck(utl::PSM, "dump", 1)) {
+      if (debug_network != nullptr) {
+        debug_network->dumpNodes(node_index);
+      }
+      dumpMatrix(g_matrix, "G", logger);
+      dumpVector(j_vector, "J", logger);
     }
-    logger_->error(
+    logger->error(
         utl::PSM,
         10,
         "LU factorization of the G Matrix failed. SparseLU solver message: {}.",
         eigen_solver.lastErrorMessage());
   }
 
-  debugPrint(logger_, utl::PSM, "solve", 1, "Solving system of equations GV=J");
+  debugPrint(logger, utl::PSM, "solve", 1, "Solving system of equations GV=J");
   const Eigen::VectorXd v_vector = eigen_solver.solve(j_vector);
   if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
     // solving failed
-    if (logger_->debugCheck(utl::PSM, "dump", 1)) {
-      network_->dumpNodes(node_index);
-      dumpMatrix(g_matrix, "G");
-      dumpVector(j_vector, "J");
+    if (logger->debugCheck(utl::PSM, "dump", 1)) {
+      if (debug_network != nullptr) {
+        debug_network->dumpNodes(node_index);
+      }
+      dumpMatrix(g_matrix, "G", logger);
+      dumpVector(j_vector, "J", logger);
     }
-    logger_->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
+    logger->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
   }
-  debugPrint(logger_,
+  debugPrint(logger,
              utl::PSM,
              "solve",
              1,
              "Solving system of equations GV=J complete");
 
-  if (logger_->debugCheck(utl::PSM, "dump", 2)) {
-    network_->dumpNodes(node_index);
-    dumpMatrix(g_matrix, "G");
-    dumpVector(j_vector, "J");
-    dumpVector(v_vector, "V");
+  if (logger->debugCheck(utl::PSM, "dump", 2)) {
+    if (debug_network != nullptr) {
+      debug_network->dumpNodes(node_index);
+    }
+    dumpMatrix(g_matrix, "G", logger);
+    dumpVector(j_vector, "J", logger);
+    dumpVector(v_vector, "V", logger);
   }
-  for (const auto& [node, node_idx] : real_node_index) {
-    voltages[node] = v_vector[node_idx];
-  }
-  solution_voltages_[corner] = src_voltage;
-  solution_power_[corner] = total_power;
+  return v_vector;
 }
 
 odb::PtrMap<odb::dbInst, float> getInstancePower(sta::dbSta* sta,
@@ -2334,12 +2372,13 @@ Connection::ConnectionMap<IRSolver::Current> IRSolver::generateCurrentMap(
 }
 
 void IRSolver::dumpVector(const Eigen::VectorXd& vector,
-                          const std::string& name) const
+                          const std::string& name,
+                          utl::Logger* logger)
 {
   const std::string report_file = fmt::format("psm_{}.txt", name);
   std::ofstream report(report_file);
   if (!report) {
-    logger_->report("Failed to open {} for {}", report_file, name);
+    logger->report("Failed to open {} for {}", report_file, name);
     return;
   }
   for (std::size_t i = 0; i < vector.size(); i++) {
@@ -2349,12 +2388,13 @@ void IRSolver::dumpVector(const Eigen::VectorXd& vector,
 
 void IRSolver::dumpMatrix(
     const Eigen::SparseMatrix<Connection::Conductance>& matrix,
-    const std::string& name) const
+    const std::string& name,
+    utl::Logger* logger)
 {
   const std::string report_file = fmt::format("psm_{}.txt", name);
   std::ofstream report(report_file);
   if (!report) {
-    logger_->report("Failed to open {} for {}", report_file, name);
+    logger->report("Failed to open {} for {}", report_file, name);
     return;
   }
   for (int k = 0; k < matrix.outerSize(); k++) {

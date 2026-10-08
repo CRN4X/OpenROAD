@@ -305,7 +305,7 @@ std::unique_ptr<IRSolver3D> PDNSim::make3DSolver(odb::dbChipNet* net,
       solver->addVoltageSource(chip, source.terminal, source.voltage);
     }
   }
-  solver->build();
+  solver->getNetwork()->construct();
   if (use_sta) {
     auto powers = getInstancePower(sta_, corner, logger_);
     // Apply saved power only in the 3D path. Keep legacy 2D behavior unchanged.
@@ -325,6 +325,7 @@ std::unique_ptr<IRSolver3D> PDNSim::make3DSolver(odb::dbChipNet* net,
       solver->addStaLoads(local_net, powers, voltage);
     }
   }
+  solver->buildCondMatrixAndVoltages();
   for (auto* local_net : solver->getNetwork()->getNets()) {
     observe3DBlock(local_net->getBlock());
   }

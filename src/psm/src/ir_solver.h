@@ -10,6 +10,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Eigen/Sparse"
@@ -156,9 +157,48 @@ class IRSolver
 
   IRNetwork* getNetwork() const { return network_.get(); }
 
- private:
   template <typename T>
   using ValueNodeMap = std::map<const Node*, T>;
+
+  // Keep connections with coincident coordinates on different chiplets
+  // distinct.
+  using NodeConductances
+      = std::map<Node*,
+                 std::vector<std::pair<Connection*, Connection::Conductance>>>;
+  struct MatrixSource
+  {
+    std::size_t source_index;
+    std::size_t node_index;
+    Voltage voltage;
+  };
+
+  // Numerical operations shared by single-chip and assembly analysis.
+  static odb::PtrMap<odb::dbInst, Power> buildNodeCurrentMap(
+      const odb::PtrMap<odb::dbInst, Node::NodeSet>& inst_nodes,
+      const odb::PtrMap<odb::dbInst, Power>& powers,
+      Voltage power_voltage,
+      ValueNodeMap<Current>& currents);
+  static void buildCondMatrixAndVoltages(
+      bool negate_currents,
+      const NodeConductances& node_connections,
+      const ValueNodeMap<Current>& currents,
+      const std::map<Node*, std::size_t>& node_index,
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector,
+      utl::Logger* logger);
+  static void addSourcesToMatrixAndVoltages(
+      const std::vector<MatrixSource>& sources,
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      Eigen::VectorXd& j_vector,
+      utl::Logger* logger);
+  static Eigen::VectorXd solve(
+      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      const Eigen::VectorXd& j_vector,
+      utl::Logger* logger,
+      const std::map<Node*, std::size_t>& node_index,
+      IRNetwork* debug_network = nullptr);
+
+ private:
   using LayerPolygons
       = odb::PtrMap<odb::dbTechLayer, std::vector<odb::Polygon>>;
 
@@ -221,7 +261,7 @@ class IRSolver
   void reportMissingBTerm() const;
   void reportShortedNodes() const;
 
-  std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
+  NodeConductances getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)
       const;
   IRSolver::Power buildNodeCurrentMap(sta::Scene* corner,
@@ -230,26 +270,15 @@ class IRSolver
                                              std::size_t start = 0) const;
   std::map<Node*, std::size_t> assignNodeIDs(const SourceNodes& nodes,
                                              std::size_t start = 0) const;
-  void buildCondMatrixAndVoltages(
-      bool is_ground,
-      const std::map<Node*, Connection::ConnectionSet>& node_connections,
-      const ValueNodeMap<Current>& currents,
-      const Connection::ConnectionMap<Connection::Conductance>& conductance,
-      const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      Eigen::VectorXd& j_vector) const;
-  void addSourcesToMatrixAndVoltages(
-      Voltage src_voltage,
-      const SourceNodes& sources,
-      const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      Eigen::VectorXd& j_vector) const;
-
   std::string getMetricKey(const std::string& key, sta::Scene* corner) const;
 
-  void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
-  void dumpMatrix(const Eigen::SparseMatrix<Connection::Conductance>& matrix,
-                  const std::string& name) const;
+  static void dumpVector(const Eigen::VectorXd& vector,
+                         const std::string& name,
+                         utl::Logger* logger);
+  static void dumpMatrix(
+      const Eigen::SparseMatrix<Connection::Conductance>& matrix,
+      const std::string& name,
+      utl::Logger* logger);
   void dumpConductance(
       const Connection::ConnectionMap<Connection::Conductance>& cond,
       const std::string& name) const;
