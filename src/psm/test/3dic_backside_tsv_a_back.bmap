@@ -1,0 +1,6 @@
+# Custom 1.6 x 1.6 um contacts on GT2N BRDL.
+# BMAP coordinates are in microns and locate the cell boundary center.
+# For this custom master, that is also the PAD center.
+# bumpInstName bumpCellType x(um) y(um) portName netName
+bump_vdd_back GT2N_TEST_BUMP_BACK 5.0 10.0 VDD_BACK VDD
+bump_vss_back GT2N_TEST_BUMP_BACK 15.0 10.0 VSS_BACK VSS

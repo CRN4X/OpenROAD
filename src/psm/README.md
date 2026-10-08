@@ -13,6 +13,63 @@ Features:
 
 ![picorv32](doc/picorv32.png)
 
+## 3D Power-Grid Test Setup
+
+From `src/psm/test`, load the GT2N example and create its test connections:
+
+```tcl
+read_3dbx "3dic_backside_tsv.3dbx"
+source "3dic_backside_tsv_connections_setup.tcl"
+source "3dic_backside_tsv_rc_setup.tcl"
+```
+
+`read_3dbx` loads the chiplets, bumps, nets, and bonds into OpenDB. It does
+not create resistor objects. The connections script then uses the existing
+`odb::dbChipCapNode_create` and `odb::dbChipRSeg_create` APIs to add one
+VDD bond resistor and one VSS bond resistor. It connects Chip A's front
+bumps to Chip B's front bumps. Each assembly supply net contains only those
+two front bumps. The package-facing backside bumps remain on Chip A's
+local DEF power nets; they are not assembly-net members. All six physical
+bumps remain in the layout, and PSM can still supply Chip A at its local
+backside ports.
+
+The script reads the first `HBV` resistance from `3dic_cross_assembly.rules`
+next to it and assigns that value to both bond resistors. This shares the
+same input file with the Nangate RCX tests. The supplied **0.1 ohm** is an
+explicit test value; the script reads it without running RCX extraction.
+For real chips, use characterized PDK or package values. Source it once,
+before running PSM analysis, in a freshly loaded example. It reports an
+error if power-net resistor objects already exist. The separate RC script
+sets the routing-layer and via resistances used by this GT2N example.
+
+PSM reads the resistor objects for connectivity checks and IR-drop analysis.
+There is no PSM-to-RCX extraction callback. The existing RCX, OpenDB, and
+PDN APIs supply all the operations needed for this test setup.
+`write_db` saves the resistors and their endpoints. After `read_db`, use
+the saved objects without sourcing the connections script again.
+
+For Tcl queries, `psm::get_3d_chip_rsegs $chip_net` returns the stored
+resistors, and `psm::get_3d_chip_cap_node_count $chip_net` returns the endpoint
+node count. These are read-only PSM wrappers around existing OpenDB APIs.
+
+The Nangate45 examples can instead use the existing full OpenRCX flow:
+
+```tcl
+read_3dbx "3dic_cross.3dbx"
+set_extraction_rules_file -tech Nangate45_tech "Nangate45/Nangate45.rcx_rules"
+set_extraction_rules_file -assembly "3dic_cross_assembly.rules"
+extract_parasitics
+```
+
+That command reads the technology and assembly rules, extracts each die,
+and creates the inter-chip resistors. Its assembly rules file uses the
+existing `VIA_RESISTANCE` / `HBV 0.1` / `END` format. Run it once in a fresh
+example: the original RCX implementation creates new resistor objects
+on each extraction. It supports two bumps per inter-chip net. The GT2N
+example now meets that bump-count requirement: its top Verilog connects
+only the front ports to the assembly supply nets. Its supplied data still
+has no RCX extraction model, so its tests use the explicit ODB setup above.
+
 ## Commands
 
 ```{note}
@@ -71,6 +128,118 @@ check_power_grid
 | `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
 | `-error_file` | File to write power grid errors to. |
 | `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. |
+
+### Check 3D Power Grid
+
+Build each chiplet's PSM `IRNetwork`, read the inter-die `dbChipRSeg` objects
+from ODB, and stitch the chiplet networks with fixed-resistance connections.
+OpenRCX can populate these objects from assembly extraction rules; tests may
+instead use the same rules reader through the file reference above.
+This command checks that all nodes in the combined network are connected,
+including isolated metal and terminals. It reports disconnected sections
+inside a chiplet or across chiplets without building or solving a G matrix.
+
+```tcl
+check_3d_power_grid
+    -net chip_net
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`, such as VDD or VSS. |
+
+### Check 3D G Matrix
+
+Build one combined conductance matrix from all on-chip PDN connections and
+inter-die `dbChipRSeg` connections for a top-level power or ground
+`dbChipNet`. This command validates connectivity and matrix construction; it does not add
+voltage sources, build a current vector, or solve for node voltages.
+
+```tcl
+check_3d_g_matrix
+    -net chip_net
+    [-require_tsv]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`, such as VDD or VSS. |
+| `-require_tsv` | Require at least one backside `BridgeConnection` in the combined network. This is useful for checking a TSV-like backside-to-frontside power path. |
+
+### Add 3D PDN Current
+
+Add a signed current injection at a chiplet boundary port. Negative current is
+drawn from a VDD network; positive current is returned into a VSS network.
+Multiple loads at the same node are accumulated.
+
+```tcl
+add_3d_pdn_current
+    -net chip_net
+    -chip chiplet
+    -port port
+    -current current
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`. |
+| `-chip` | Chiplet instance containing the load port. |
+| `-port` | Physical chiplet `dbBTerm` where the current is applied. |
+| `-current` | Signed current injection in amperes. |
+
+### Check 3D J Vector
+
+Build and validate a combined current vector containing one entry for every
+node in the corresponding 3D G matrix.
+
+```tcl
+check_3d_j_vector
+    -net chip_net
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Top-level power or ground `dbChipNet`, such as VDD or VSS. |
+
+### Set 3D PDN Voltage Source
+
+Fix a chiplet boundary port to a package-supplied voltage.
+
+```tcl
+set_3d_pdn_voltage_source
+    -net chip_net
+    -chip chiplet
+    -port port
+    -voltage voltage
+```
+
+### Solve 3D Power Grid
+
+Apply the fixed-voltage boundary conditions and solve `G * V = J`.
+
+```tcl
+solve_3d_power_grid -net chip_net
+```
+
+### Get 3D PDN Voltage
+
+Return the solved voltage at a physical chiplet boundary port.
+
+```tcl
+get_3d_pdn_voltage
+    -net chip_net
+    -chip chiplet
+    -port port
+```
+
 
 ### Write Spice Power Grid
 

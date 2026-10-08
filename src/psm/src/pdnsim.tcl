@@ -32,6 +32,131 @@ proc check_power_grid { args } {
     $dont_require_bterm
 }
 
+sta::define_cmd_args "check_3d_power_grid" {
+  -net chip_net
+}
+
+proc check_3d_power_grid { args } {
+  sta::parse_key_args "check_3d_power_grid" args keys {-net} flags {}
+  sta::check_argc_eq0 "check_3d_power_grid" $args
+
+  if { ![info exists keys(-net)] } {
+    utl::error PSM 105 "Argument -net not specified."
+  }
+  return [psm::check_3d_power_grid_cmd $keys(-net)]
+}
+
+sta::define_cmd_args "check_3d_g_matrix" {
+  -net chip_net
+  [-require_tsv]
+}
+
+proc check_3d_g_matrix { args } {
+  sta::parse_key_args "check_3d_g_matrix" args keys {-net} flags {-require_tsv}
+  sta::check_argc_eq0 "check_3d_g_matrix" $args
+
+  if { ![info exists keys(-net)] } {
+    utl::error PSM 112 "Argument -net not specified."
+  }
+  return [psm::check_3d_g_matrix_cmd \
+    $keys(-net) \
+    [info exists flags(-require_tsv)]]
+}
+
+sta::define_cmd_args "add_3d_pdn_current" {
+  -net chip_net
+  -chip chiplet
+  -port port
+  -current current
+}
+
+proc add_3d_pdn_current { args } {
+  sta::parse_key_args "add_3d_pdn_current" args \
+    keys {-net -chip -port -current} flags {}
+  sta::check_argc_eq0 "add_3d_pdn_current" $args
+
+  foreach key {-net -chip -port -current} {
+    if { ![info exists keys($key)] } {
+      utl::error PSM 121 "Missing mandatory argument $key."
+    }
+  }
+  sta::check_float "-current" $keys(-current)
+
+  psm::add_3d_pdn_current_cmd \
+    $keys(-net) $keys(-chip) $keys(-port) $keys(-current)
+}
+
+sta::define_cmd_args "check_3d_j_vector" {
+  -net chip_net
+}
+
+proc check_3d_j_vector { args } {
+  sta::parse_key_args "check_3d_j_vector" args keys {-net} flags {}
+  sta::check_argc_eq0 "check_3d_j_vector" $args
+
+  if { ![info exists keys(-net)] } {
+    utl::error PSM 122 "Argument -net not specified."
+  }
+  return [psm::check_3d_j_vector_cmd $keys(-net)]
+}
+
+sta::define_cmd_args "set_3d_pdn_voltage_source" {
+  -net chip_net
+  -chip chiplet
+  -port port
+  -voltage voltage
+}
+
+proc set_3d_pdn_voltage_source { args } {
+  sta::parse_key_args "set_3d_pdn_voltage_source" args \
+    keys {-net -chip -port -voltage} flags {}
+  sta::check_argc_eq0 "set_3d_pdn_voltage_source" $args
+
+  foreach key {-net -chip -port -voltage} {
+    if { ![info exists keys($key)] } {
+      utl::error PSM 134 "Missing mandatory argument $key."
+    }
+  }
+  sta::check_float "-voltage" $keys(-voltage)
+
+  psm::set_3d_pdn_voltage_source_cmd \
+    $keys(-net) $keys(-chip) $keys(-port) $keys(-voltage)
+}
+
+sta::define_cmd_args "solve_3d_power_grid" {
+  -net chip_net
+}
+
+proc solve_3d_power_grid { args } {
+  sta::parse_key_args "solve_3d_power_grid" args keys {-net} flags {}
+  sta::check_argc_eq0 "solve_3d_power_grid" $args
+
+  if { ![info exists keys(-net)] } {
+    utl::error PSM 135 "Argument -net not specified."
+  }
+  return [psm::solve_3d_power_grid_cmd $keys(-net)]
+}
+
+sta::define_cmd_args "get_3d_pdn_voltage" {
+  -net chip_net
+  -chip chiplet
+  -port port
+}
+
+proc get_3d_pdn_voltage { args } {
+  sta::parse_key_args "get_3d_pdn_voltage" args \
+    keys {-net -chip -port} flags {}
+  sta::check_argc_eq0 "get_3d_pdn_voltage" $args
+
+  foreach key {-net -chip -port} {
+    if { ![info exists keys($key)] } {
+      utl::error PSM 136 "Missing mandatory argument $key."
+    }
+  }
+  return [psm::get_3d_pdn_voltage_cmd \
+    $keys(-net) $keys(-chip) $keys(-port)]
+}
+
 sta::define_cmd_args "analyze_power_grid" {
   -net net_name
   [-corner corner]

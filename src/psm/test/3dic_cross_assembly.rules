@@ -1,0 +1,13 @@
+# Synthetic assembly rule shared by the Nangate RCX and GT2N PSM tests.
+# Format reused from src/rcx/src/interChipModel.cpp.
+
+# One limitation: the current code accepts one HBV resistance and
+# applies it to every connection bond it models
+# It does not support a different resistance for each individual bond.
+
+# That limitation was already in the existing RCX code file -
+# src/rcx/src/interChipModel.cpp: parseInterChipRules stops after the first HBV.
+
+VIA_RESISTANCE
+HBV 0.1
+END
