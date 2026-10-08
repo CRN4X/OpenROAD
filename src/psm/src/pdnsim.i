@@ -3,6 +3,7 @@
 
 %include "../../Exception.i"
 %{
+#include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include <vector>
@@ -56,6 +57,12 @@ using sta::Scene;
 }
 
 %inline %{
+
+bool
+is_3d_design(odb::dbChip* chip)
+{
+  return sta::dbNetwork::is3DicTopChip(chip);
+}
 
 // ODB's C++ collections are available even when its Tcl list wrappers are not.
 std::vector<odb::dbChipRSeg*>

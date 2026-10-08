@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "Eigen/Core"
-#include "Eigen/SparseLU"
 #include "connection.h"
 #include "ir_network_3d.h"
 #include "ir_solver.h"
@@ -30,15 +29,6 @@ IRSolver3D::IRSolver3D(odb::dbChipNet* chip_net,
       corner_(corner),
       network_(std::make_unique<IRNetwork3D>(chip_net, logger))
 {
-}
-
-void IRSolver3D::build()
-{
-  voltage_vector_.resize(0);
-  sta_currents_.clear();
-  network_->construct();
-  buildConductanceMatrix();
-  buildCurrentVector();
 }
 
 void IRSolver3D::addCurrentLoad(odb::dbChipInst* chip_inst,
@@ -83,8 +73,9 @@ Connection::ResistanceMap IRSolver3D::getResistanceMap() const
   return resistance;
 }
 
-void IRSolver3D::buildConductanceMatrix()
+void IRSolver3D::buildCondMatrixAndVoltages()
 {
+  voltage_vector_.resize(0);
   node_index_.clear();
 
   std::size_t index = 0;
@@ -94,8 +85,7 @@ void IRSolver3D::buildConductanceMatrix()
 
   g_matrix_.resize(node_index_.size(), node_index_.size());
   const Connection::ResistanceMap resistance_map = getResistanceMap();
-  std::vector<Eigen::Triplet<Connection::Conductance>> matrix_values;
-  matrix_values.reserve(network_->getConnectionCount() * 4);
+  IRSolver::NodeConductances node_connections;
 
   for (Connection* connection : network_->getConnections()) {
     const Connection::Resistance resistance
@@ -115,19 +105,34 @@ void IRSolver3D::buildConductanceMatrix()
           utl::PSM, 109, "A 3D power-grid connection forms a node loop.");
     }
 
-    const std::size_t node0_index = node_index_.at(node0);
-    const std::size_t node1_index = node_index_.at(node1);
     const Connection::Conductance conductance = 1.0 / resistance;
-
-    matrix_values.emplace_back(node0_index, node0_index, conductance);
-    matrix_values.emplace_back(node1_index, node1_index, conductance);
-    matrix_values.emplace_back(node0_index, node1_index, -conductance);
-    matrix_values.emplace_back(node1_index, node0_index, -conductance);
+    node_connections[node0].emplace_back(connection, conductance);
+    node_connections[node1].emplace_back(connection, conductance);
   }
 
-  g_matrix_.setFromTriplets(matrix_values.begin(), matrix_values.end());
-  g_matrix_.prune(0.0);
-  g_matrix_.makeCompressed();
+  IRSolver::ValueNodeMap<Current> currents(sta_currents_.begin(),
+                                           sta_currents_.end());
+  for (const CurrentLoad& load : current_loads_) {
+    Node* node = network_->findTerminalNode(load.chip_inst, load.terminal);
+    if (node == nullptr) {
+      logger_->error(
+          utl::PSM,
+          114,
+          "Cannot map current load at port {} on chiplet {} into "
+          "the combined 3D network.",
+          load.terminal,
+          load.chip_inst == nullptr ? "<null>" : load.chip_inst->getName());
+    }
+    currents[node] += load.current;
+  }
+  j_vector_ = CurrentVector::Zero(node_index_.size());
+  IRSolver::buildCondMatrixAndVoltages(false,
+                                       node_connections,
+                                       currents,
+                                       node_index_,
+                                       g_matrix_,
+                                       j_vector_,
+                                       logger_);
 }
 
 void IRSolver3D::addStaLoads(odb::dbNet* net,
@@ -141,29 +146,23 @@ void IRSolver3D::addStaLoads(odb::dbNet* net,
                    net->getName());
   }
   const double sign = net->getSigType() == odb::dbSigType::GROUND ? 1.0 : -1.0;
-  std::size_t cells = 0;
-  for (const auto& [inst, nodes] : network_->getInstanceNodeMapping(net)) {
-    const auto power = powers.find(inst);
-    if (power == powers.end()) {
-      // Physical cells such as the fake bumps have no Liberty power model.
-      continue;
-    }
-    if (!std::isfinite(power->second) || power->second < 0.0) {
+  const auto inst_nodes = network_->getInstanceNodeMapping(net);
+  IRSolver::ValueNodeMap<Current> currents;
+  const auto instance_powers = IRSolver::buildNodeCurrentMap(
+      inst_nodes, powers, power_voltage, currents);
+  for (const auto& [inst, power] : instance_powers) {
+    if (!std::isfinite(power) || power < 0.0) {
       logger_->error(utl::PSM,
                      148,
                      "OpenSTA reported invalid power for {}/{}.",
                      net->getBlock()->getName(),
                      inst->getName());
     }
-    // Divide the cell's current equally between its supply terminals, just
-    // as IRSolver::buildNodeCurrentMap does for a single-chip network.
-    const Current current = sign * power->second / power_voltage / nodes.size();
-    for (Node* node : nodes) {
-      sta_currents_[node] = current;
+    for (Node* node : inst_nodes.at(inst)) {
+      sta_currents_[node] = sign * currents.at(node);
     }
-    ++cells;
   }
-  if (cells == 0) {
+  if (instance_powers.empty()) {
     logger_->error(utl::PSM,
                    149,
                    "No cells with OpenSTA power models are connected to {}/{}.",
@@ -171,28 +170,6 @@ void IRSolver3D::addStaLoads(odb::dbNet* net,
                    net->getName());
   }
   voltage_vector_.resize(0);
-  buildCurrentVector();
-}
-
-void IRSolver3D::buildCurrentVector()
-{
-  j_vector_ = CurrentVector::Zero(node_index_.size());
-  for (const auto& [node, current] : sta_currents_) {
-    j_vector_[node_index_.at(node)] += current;
-  }
-  for (const CurrentLoad& load : current_loads_) {
-    Node* node = network_->findTerminalNode(load.chip_inst, load.terminal);
-    if (node == nullptr) {
-      logger_->error(
-          utl::PSM,
-          114,
-          "Cannot map current load at port {} on chiplet {} into "
-          "the combined 3D network.",
-          load.terminal,
-          load.chip_inst == nullptr ? "<null>" : load.chip_inst->getName());
-    }
-    j_vector_[node_index_.at(node)] += load.current;
-  }
 }
 
 bool IRSolver3D::checkCurrentVector() const
@@ -271,47 +248,29 @@ bool IRSolver3D::solve()
     return false;
   }
 
-  CurrentVector right_hand_side = j_vector_;
-  for (const auto& [source_index, source_voltage] : sources) {
-    for (ConductanceMatrix::InnerIterator value(g_matrix_, source_index); value;
-         ++value) {
-      const std::size_t row = value.row();
-      if (!sources.contains(row)) {
-        right_hand_side[row] -= value.value() * source_voltage;
-      }
-    }
-    right_hand_side[source_index] = source_voltage;
-  }
+  const std::size_t node_count = node_index_.size();
+  const std::size_t matrix_size = node_count + sources.size();
+  ConductanceMatrix matrix = g_matrix_;
+  matrix.conservativeResize(matrix_size, matrix_size);
+  CurrentVector currents = CurrentVector::Zero(matrix_size);
+  currents.head(node_count) = j_vector_;
 
-  std::vector<Eigen::Triplet<Connection::Conductance>> matrix_values;
-  matrix_values.reserve(g_matrix_.nonZeros() + sources.size());
-  for (Eigen::Index column = 0; column < g_matrix_.outerSize(); column++) {
-    for (ConductanceMatrix::InnerIterator value(g_matrix_, column); value;
-         ++value) {
-      if (!sources.contains(value.row()) && !sources.contains(value.col())) {
-        matrix_values.emplace_back(value.row(), value.col(), value.value());
-      }
-    }
+  std::vector<IRSolver::MatrixSource> matrix_sources;
+  for (const auto& [node_index, voltage] : sources) {
+    matrix_sources.push_back(
+        {node_count + matrix_sources.size(), node_index, voltage});
   }
-  for (const auto& source : sources) {
-    matrix_values.emplace_back(source.first, source.first, 1.0);
-  }
-
-  ConductanceMatrix constrained_matrix(g_matrix_.rows(), g_matrix_.cols());
-  constrained_matrix.setFromTriplets(matrix_values.begin(),
-                                     matrix_values.end());
-  constrained_matrix.makeCompressed();
-
-  Eigen::SparseLU<ConductanceMatrix> eigen_solver;
-  eigen_solver.compute(constrained_matrix);
-  if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
-    return false;
-  }
-  voltage_vector_ = eigen_solver.solve(right_hand_side);
-  if (eigen_solver.info() != Eigen::ComputationInfo::Success
-      || !checkSolution()) {
+  IRSolver::addSourcesToMatrixAndVoltages(
+      matrix_sources, matrix, currents, logger_);
+  voltage_vector_ = IRSolver::solve(matrix, currents, logger_, node_index_)
+                        .head(node_count);
+  if (!checkSolution()) {
     voltage_vector_.resize(0);
     return false;
+  }
+  // Report the prescribed source voltages exactly after validating the solve.
+  for (const auto& [node_index, voltage] : sources) {
+    voltage_vector_[node_index] = voltage;
   }
   return true;
 }
