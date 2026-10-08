@@ -25,6 +25,12 @@ proc check_power_grid { args } {
   set floorplanning [info exists flags(-floorplanning)]
   set dont_require_bterm [info exists flags(-dont_require_terminals)]
 
+  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
+    sta::check_argc_eq0 "check_power_grid" $args
+    return [psm::check_3d_power_grid_cmd $keys(-net) \
+      $floorplanning $error_file [expr { !$dont_require_bterm }]]
+  }
+
   psm::check_connectivity_cmd \
     [psm::find_net $keys(-net)] \
     $floorplanning \
@@ -80,6 +86,18 @@ proc analyze_power_grid { args } {
     if { !$enable_em } {
       utl::error PSM 55 "EM file cannot be specified without enabling em analysis."
     }
+  }
+
+  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
+    sta::check_argc_eq0 "analyze_power_grid" $args
+    foreach key {-vsrc -source_type -allow_reuse} {
+      if { [info exists keys($key)] || [info exists flags($key)] } {
+        utl::error PSM 157 "$key is not supported for a 3D assembly."
+      }
+    }
+    return [psm::analyze_3d_power_grid_cmd \
+      $keys(-net) [sta::parse_scene_or_default keys] true \
+      $error_file $voltage_file $enable_em $em_file]
   }
 
   psm::analyze_power_grid_cmd \
@@ -191,12 +209,51 @@ proc write_pg_spice { args } {
 
 sta::define_cmd_args "set_pdnsim_net_voltage" {
   -net net_name
-  -voltage volt
-  [-corner corner]}
+  [-voltage volt]
+  [-corner corner]
+  [-chiplet chipA]
+  [-port port]
+  [-nominal_voltage voltage]
+}
 
 proc set_pdnsim_net_voltage { args } {
   sta::parse_key_args "set_pdnsim_net_voltage" args \
-    keys {-net -corner -voltage} flags {}
+    keys {-net -corner -voltage -chiplet -port -nominal_voltage} flags {}
+
+  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
+    sta::check_argc_eq0 "set_pdnsim_net_voltage" $args
+    set set_source [expr { [info exists keys(-port)] || [info exists keys(-voltage)] }]
+    set required {-net -chiplet}
+    if { $set_source } { lappend required -port -voltage }
+    foreach key $required {
+      if { ![info exists keys($key)] } {
+        utl::error PSM 134 "Missing mandatory argument $key."
+      }
+    }
+    set port ""
+    set voltage 0.0
+    if { $set_source } {
+      sta::check_float "-voltage" $keys(-voltage)
+      set port $keys(-port)
+      set voltage $keys(-voltage)
+    }
+    set set_nominal [info exists keys(-nominal_voltage)]
+    set nominal_voltage 0.0
+    if { $set_nominal } {
+      sta::check_float "-nominal_voltage" $keys(-nominal_voltage)
+      set nominal_voltage $keys(-nominal_voltage)
+    }
+
+    return [psm::set_pdnsim_chiplet_voltage_cmd \
+      $keys(-net) $keys(-chiplet) $port $voltage \
+      [sta::parse_scene_or_default keys] $set_source $set_nominal $nominal_voltage]
+  }
+
+  foreach key {-chiplet -port -nominal_voltage} {
+    if { [info exists keys($key)] } {
+      utl::error PSM 158 "$key requires a 3D assembly."
+    }
+  }
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
     set net [psm::find_net $keys(-net)]
     set voltage $keys(-voltage)
