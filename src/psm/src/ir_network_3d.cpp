@@ -261,7 +261,12 @@ Node* IRNetwork3D::findEndpoint(odb::dbChipCapNode* cap_node)
 
 std::size_t IRNetwork3D::getNodeCount() const
 {
-  return getNodes().size();
+  std::size_t count = 0;
+  for (const ChipletNetwork& chiplet : networks_) {
+    count += chiplet.network->getNodeCount(true);
+    count += chiplet.network->getBPinNodes().size();
+  }
+  return count;
 }
 
 std::size_t IRNetwork3D::getConnectionCount() const

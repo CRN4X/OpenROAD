@@ -227,7 +227,8 @@ odb::dbChipInst* PDNSim::find3DChip(odb::dbChipNet* chip_net,
                                     const std::string& terminal) const
 {
   auto* chip = db_->getChip()->findChipInst(chip_name.c_str());
-  if (chip == nullptr || chip->getMasterChip()->getBlock() == nullptr) {
+  if (chip == nullptr || chip->getMasterChip() == nullptr
+      || chip->getMasterChip()->getBlock() == nullptr) {
     logger_->error(utl::PSM, 116, "Cannot find leaf chiplet {}.", chip_name);
   }
   auto* block = chip->getMasterChip()->getBlock();
@@ -529,7 +530,8 @@ void PDNSim::setChipletVoltage(const std::string& chip_net_name,
           utl::PSM, 161, "Nominal voltage must be positive and finite.");
     }
     auto* chip = db_->getChip()->findChipInst(chip_name);
-    if (chip == nullptr || chip->getMasterChip()->getBlock() == nullptr) {
+    if (chip == nullptr || chip->getMasterChip() == nullptr
+        || chip->getMasterChip()->getBlock() == nullptr) {
       logger_->error(utl::PSM, 162, "Cannot find leaf chiplet {}.", chip_name);
     }
     for (uint32_t index = 0; index < net->getNumBumpInsts(); ++index) {
