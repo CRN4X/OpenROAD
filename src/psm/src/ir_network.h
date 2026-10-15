@@ -69,6 +69,7 @@ class IRNetwork
                                       PointIndexableGetter<Node>>;
 
   IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning);
+  ~IRNetwork();
 
   odb::dbNet* getNet() const { return net_; };
 
@@ -99,6 +100,7 @@ class IRNetwork
   {
     return bpin_nodes_;
   }
+  BPinNode* findBTermNode(odb::dbBTerm* bterm) const;
   Node::NodeSet getBPinShapeNodes() const;
 
   odb::dbTechLayer* getTopLayer() const;

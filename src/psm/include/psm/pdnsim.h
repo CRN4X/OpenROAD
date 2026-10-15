@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -39,7 +40,9 @@ using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
 
 namespace psm {
 class IRDropDataSource;
+class IRNetwork3D;
 class IRSolver;
+class IRSolver3D;
 
 enum class GeneratedSourceType
 {
@@ -100,6 +103,21 @@ class PDNSim : public odb::dbBlockCallBackObj
                          bool floorplanning,
                          const std::string& error_file,
                          bool require_bterm);
+  bool check3DPowerGrid(const std::string& chip_net_name);
+  bool check3DGMatrix(const std::string& chip_net_name, bool require_tsv);
+  void add3DPDNCurrent(const std::string& chip_net_name,
+                       const std::string& chip_name,
+                       const std::string& port_name,
+                       double current);
+  bool check3DJVector(const std::string& chip_net_name);
+  void set3DPDNVoltageSource(const std::string& chip_net_name,
+                             const std::string& chip_name,
+                             const std::string& port_name,
+                             double voltage);
+  bool solve3DPowerGrid(const std::string& chip_net_name);
+  double get3DPDNVoltage(const std::string& chip_net_name,
+                         const std::string& chip_name,
+                         const std::string& port_name) const;
   void setDebugGui(bool enable);
 
   void clearSolvers();
@@ -132,9 +150,24 @@ class PDNSim : public odb::dbBlockCallBackObj
   sta::Scene* getLastAnalyzedCorner() const { return last_corner_; }
 
  private:
+  struct CurrentLoad3D
+  {
+    odb::dbChipInst* chip_inst;
+    odb::dbBTerm* bterm;
+    double current;
+  };
+
+  struct VoltageSource3D
+  {
+    odb::dbChipInst* chip_inst;
+    odb::dbBTerm* bterm;
+    double voltage;
+  };
+
   // Functions of decap cells
   odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
   odb::dbNet* findPowerNet(const char* net_name);
+  odb::dbChipNet* findChipNet(const std::string& chip_net_name) const;
 
   IRSolver* getIRSolver(odb::dbNet* net, bool floorplanning);
 
@@ -151,6 +184,11 @@ class PDNSim : public odb::dbBlockCallBackObj
   GeneratedSourceSettings generated_source_settings_;
 
   odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>> solvers_;
+  odb::PtrMap<odb::dbChipNet, std::unique_ptr<IRNetwork3D>> networks_3d_;
+  odb::PtrMap<odb::dbChipNet, std::unique_ptr<IRSolver3D>> solvers_3d_;
+  odb::PtrMap<odb::dbChipNet, std::vector<CurrentLoad3D>> user_currents_3d_;
+  odb::PtrMap<odb::dbChipNet, std::vector<VoltageSource3D>>
+      user_voltage_sources_3d_;
   odb::PtrMap<odb::dbNet, std::map<sta::Scene*, double>> user_voltages_;
   odb::PtrMap<odb::dbInst, std::map<sta::Scene*, float>> user_powers_;
 

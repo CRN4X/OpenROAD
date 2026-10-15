@@ -1,0 +1,68 @@
+#!define GT2N_PATH gt2n_data
+
+# Both chiplets use the existing GT2N technology and standard-cell LEFs.
+# Custom test bumps/bridge are separate; no PDK LEF is modified.
+# RDL is frontside; BRDL is backside. Both dies are 20 x 20 um.
+# Each chiplet places a GT2N flip-flop, inverter and buffer, plus separate VDD/VSS test bridges.
+# Before running PSM, source 3dic_backside_tsv_rc_setup.tcl for layer resistance.
+
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  backside_tsv_chip_a:
+    type: die
+    design_area: [20, 20]
+    shrink: 1
+    tsv: true
+    thickness: 300
+    offset: [0, 0]
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_backside_tsv_a_front.bmap
+        layer: RDL
+      back_reg:
+        side: back
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_backside_tsv_a_back.bmap
+        layer: BRDL
+    external:
+      APR_tech_file: [GT2N_PATH/gt2_tech.lef]
+      LEF_file: [GT2N_PATH/gt2_6t_w31_svt.lef, 3dic_backside_gt2n_cells.lef]
+      DEF_file: 3dic_backside_tsv_a.def
+
+  backside_tsv_chip_b:
+    type: die
+    design_area: [20, 20]
+    shrink: 1
+    # Its bridges feed the GT2N buried power rails from the front-side bumps.
+    tsv: true
+    thickness: 300
+    offset: [0, 0]
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_backside_tsv_b_front.bmap
+        layer: RDL
+    external:
+      APR_tech_file: [GT2N_PATH/gt2_tech.lef]
+      LEF_file: [GT2N_PATH/gt2_6t_w31_svt.lef, 3dic_backside_gt2n_cells.lef]
+      DEF_file: 3dic_backside_tsv_b.def
+

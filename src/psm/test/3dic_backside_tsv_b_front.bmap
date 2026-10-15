@@ -1,0 +1,7 @@
+# Custom 1.6 x 1.6 um contacts on GT2N RDL.
+# BMAP coordinates are in microns and locate the cell boundary center.
+# For this custom master, that is also the PAD center.
+# Chip A and Chip B PAD centers coincide after the MZ (z-only) flip.
+# bumpInstName bumpCellType x(um) y(um) portName netName
+bump_vdd GT2N_TEST_BUMP_FRONT 10.0 5.0 VDD VDD
+bump_vss GT2N_TEST_BUMP_FRONT 10.0 15.0 VSS VSS
