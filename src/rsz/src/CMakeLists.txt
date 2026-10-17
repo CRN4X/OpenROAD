@@ -18,15 +18,15 @@ add_library(rsz_lib
     RepairDesign.cc
     RepairHold.cc
     Rebuffer.cc
-    policy/SetupLegacyMtPolicy.cc
     policy/SetupLegacyBase.cc
     MoveCommitter.cc
+    RepairSetupProfiler.cc
     MoveTracker.cc
     policy/OptimizationPolicy.cc
     policy/OptimizationPolicy.hh
+    policy/ProgressReporter.cc
     Optimizer.cc
     OptimizerTypes.cc
-    policy/MeasuredVtSwapPolicy.cc
     DelayEstimator.cc
     DelayEstimatorReporter.cc
     LRSubproblem.cc
@@ -36,7 +36,6 @@ add_library(rsz_lib
     policy/SetupLegacyPolicy.cc
     policy/SetupTnsPolicy.cc
     policy/SetupWnsPolicy.cc
-    policy/SetupMt1Policy.cc
     policy/SetupReroutePolicy.cc
     policy/GlobalSizingPolicy.cc
     Resizer.cc
@@ -46,12 +45,10 @@ add_library(rsz_lib
 
     move/BufferCandidate.cc
     move/BufferGenerator.cc
-    move/CloneCandidate.cc
-    move/CloneGenerator.cc
     move/BufferToInvertersCandidate.cc
     move/BufferToInvertersGenerator.cc
-    move/MeasuredVtSwapCandidate.cc
-    move/MeasuredVtSwapGenerator.cc
+    move/CloneCandidate.cc
+    move/CloneGenerator.cc
     move/MoveCandidate.cc
     move/MoveGenerator.cc
     move/RerouteCandidate.cc

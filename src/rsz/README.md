@@ -272,6 +272,8 @@ repair_timing
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
 | `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
+| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing, `1` records the WNS/TNS trajectory, `2` adds the pass events. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. |
+| `-profile_dir` | Directory of the profiler output; the default is `repair_setup_profile` under the current directory. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_iterations` | Defines the maximum number of iterations executed when repairing setup and hold violations. The default is `-1`, which disables the limit of iterations. |
@@ -596,7 +598,9 @@ report_buffers
 The `report_delay_estimator_accuracy` command compares a delay
 estimator's predictions against the reference STA delay for a candidate
 library cell at the given instance.  It is intended as a developer aid
-for evaluating estimator accuracy when sizing.
+for evaluating estimator accuracy when sizing.  The estimator runs with the
+STA slew bias of the setup repair policies, which corrects the table slew of
+the fanin driver stage with STA slews sampled at three loads.
 
 ```tcl
 report_delay_estimator_accuracy
@@ -612,7 +616,7 @@ report_delay_estimator_accuracy
 | ----- | ----- |
 | `-inst` | Instance whose driver pin is used as the candidate sizing site. Required. |
 | `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
-| `-estimator` | Delay estimator to evaluate. One of `legacy`, `delay_estimator`, `legacy_mt`, `mt`. Required. |
+| `-estimator` | Delay estimator to evaluate. Required. `legacy`: the estimate of the LEGACY moves, the gate delay at the current load plus the fanin drive resistance times the input pin cap. `stage_window`: Liberty tables propagated over a window of stages around the target (see `-delay_levels`), as the Mt moves estimate. |
 | `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
 
 ### Optimizing Arithmetic Modules

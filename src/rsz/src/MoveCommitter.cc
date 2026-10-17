@@ -17,6 +17,7 @@
 #include "MoveCandidate.hh"
 #include "MoveTracker.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -88,11 +89,17 @@ bool MoveCommitter::moveTrackerEnabled(const int level) const
 
 MoveResult MoveCommitter::commit(MoveCandidate& candidate)
 {
-  MoveResult result = candidate.apply();
+  RepairSetupProfiler::beginApply(candidate);
+  MoveResult result;
+  {
+    const ProfileScope profile("apply");
+    result = candidate.apply();
+  }
+  RepairSetupProfiler::endApply(candidate, result);
   if (result.accepted) {
     recordAcceptedResult(result);
     // Only the journaled path needs the per-level result trail; non-journaled
-    // commits (e.g. MeasuredVtSwapPolicy) flush via acceptPendingMoves and
+    // commits (e.g. SetupCritVtSwapPolicy) flush via acceptPendingMoves and
     // never restore.
     if (!pending_move_results_.empty()) {
       pending_move_results_.top().push_back(result);
@@ -174,32 +181,6 @@ void MoveCommitter::trackViolatorWithTimingInfo(
       pin, gate_type, load_delay, intrinsic_delay, pin_slack, endpoint_slack);
 }
 
-void MoveCommitter::trackPreparedViolator(const Target& target)
-{
-  if (!moveTrackerEnabled()) {
-    return;
-  }
-
-  if (!target.isPrepared(kArcDelayStateCache)) {
-    return;
-  }
-
-  const sta::Pin* endpoint_pin = target.endpointPin(resizer_);
-  if (endpoint_pin != nullptr) {
-    setCurrentEndpoint(endpoint_pin);
-  }
-
-  const ArcDelayState& arc_delay = target.arc_delay.value();
-  const DelayStageState& target_stage = arc_delay.target();
-  const sta::LibertyCell* current_cell = target_stage.arc.currentCell();
-  trackViolatorWithInfo(target.driver_pin,
-                        current_cell->name(),
-                        target_stage.current_delay,
-                        0.0f,
-                        target.slack,
-                        target.slack);
-}
-
 void MoveCommitter::trackMove(const sta::Pin* pin,
                               const MoveType move_type,
                               const TrackedMoveStateType state)
@@ -250,6 +231,7 @@ void MoveCommitter::printTrackerPhaseSummary(
     const char* endpoint_summary_title,
     const bool include_endpoint_summary)
 {
+  const ProfileScope profile("reporting");
   if (!moveTrackerEnabled()) {
     return;
   }
@@ -407,20 +389,28 @@ bool MoveCommitter::ecoHasPendingChanges() const
 
 void MoveCommitter::beginEcoJournal() const
 {
+  const ProfileScope scope("journal");
   debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(resizer_.block());
+  RepairSetupProfiler::journalBegin();
 }
 
 void MoveCommitter::commitEcoJournal() const
 {
+  const ProfileScope scope("journal");
   debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal commit");
   odb::dbDatabase::commitEco(resizer_.block());
+  RepairSetupProfiler::journalEnd(false);
 }
 
 void MoveCommitter::restoreEcoJournal() const
 {
+  const ProfileScope scope("journal");
   debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal restore");
+  RepairSetupProfiler::event("journal_undo_begin",
+                             {.count = std::nullopt, .trace = true});
   odb::dbDatabase::undoEco(resizer_.block());
+  RepairSetupProfiler::journalEnd(true);
 }
 
 int MoveCommitter::pendingMoveCount() const

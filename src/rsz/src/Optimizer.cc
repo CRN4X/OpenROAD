@@ -11,17 +11,15 @@
 #include <vector>
 
 #include "GlobalSizingPolicy.hh"
-#include "MeasuredVtSwapPolicy.hh"
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
+#include "RepairSetupProfiler.hh"
 #include "SetupCritVtSwapPolicy.hh"
 #include "SetupDirectionalPolicy.hh"
 #include "SetupLastGaspPolicy.hh"
 #include "SetupLegacyBase.hh"
-#include "SetupLegacyMtPolicy.hh"
 #include "SetupLegacyPolicy.hh"
-#include "SetupMt1Policy.hh"
 #include "SetupReroutePolicy.hh"
 #include "SetupTnsPolicy.hh"
 #include "SetupWnsPolicy.hh"
@@ -49,11 +47,10 @@ namespace {
 
 bool isLegacyCompatiblePhase(const std::string_view phase_name)
 {
-  return phase_name == "LEGACY" || phase_name == "LEGACY_MT"
-         || phase_name == "WNS" || phase_name == "WNS_PATH"
-         || phase_name == "WNS_CONE" || phase_name == "TNS"
-         || phase_name == "ENDPOINT_FANIN" || phase_name == "STARTPOINT_FANOUT"
-         || phase_name == "LAST_GASP";
+  return phase_name == "LEGACY" || phase_name == "WNS"
+         || phase_name == "WNS_PATH" || phase_name == "WNS_CONE"
+         || phase_name == "TNS" || phase_name == "ENDPOINT_FANIN"
+         || phase_name == "STARTPOINT_FANOUT" || phase_name == "LAST_GASP";
 }
 
 bool containsPhase(const std::vector<std::string>& phase_names,
@@ -98,10 +95,6 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<SetupLegacyPolicy>(
         resizer_, committer_, setup_context, config_);
   }
-  if (phase_name == "LEGACY_MT") {
-    return std::make_unique<SetupLegacyMtPolicy>(
-        resizer_, committer_, setup_context, config_);
-  }
   if (phase_name == "WNS" || phase_name == "WNS_PATH") {
     return std::make_unique<SetupWnsPolicy>(
         resizer_, committer_, setup_context, config_, /*use_cone=*/false);
@@ -134,20 +127,10 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<SetupReroutePolicy>(
         resizer_, committer_, setup_context, config_);
   }
-  if (phase_name == "MT1") {
-    return std::make_unique<SetupMt1Policy>(
-        resizer_, committer_, setup_context, config_);
-  }
-  if (phase_name == "MEASURED_VT_SWAP") {
-    return std::make_unique<MeasuredVtSwapPolicy>(
-        resizer_, committer_, setup_context, config_);
-  }
   if (phase_name == "GLOBAL_SIZING") {
     return std::make_unique<GlobalSizingPolicy>(
         resizer_, committer_, setup_context, config_);
   }
-  // Only public phase names are listed; experimental top-level tokens
-  // (LEGACY_MT, MT1, MEASURED_VT_SWAP) are accepted but undocumented.
   resizer_.logger()->error(
       utl::RSZ,
       217,
@@ -160,13 +143,21 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
 
 bool Optimizer::run()
 {
+  RepairSetupProfiler profile(
+      resizer_, config_.profile_mode, config_.profile_dir);
+
+  const ProfileScope optimizer_scope("optimizer_overhead");
+  profile.runConfig(config_);
   // Keep the footprint override local to this optimizer run.
   utl::SetAndRestore<bool> match_cell_footprint_override(
       resizer_.matchCellFootprint(), config_.match_cell_footprint);
 
   // Common initialize
-  resizer_.runRepairSetupPreamble();
-  committer_.init();
+  {
+    const ProfileScope scope("init_onetime");
+    resizer_.runRepairSetupPreamble();
+    committer_.init();
+  }
 
   // Keep incremental parasitics enabled across the full optimizer run so every
   // policy sees the same ECO invalidation/update behavior.
@@ -196,11 +187,18 @@ bool Optimizer::run()
   RepairSetupContext setup_context(resizer_);
   setup_context.phase_pipeline_active = true;
   for (int i = 0; i < phase_count; ++i) {
+    const std::string& phase_name = phase_names[i];
+    profile.phase(phase_name, i + 1);
     setup_context.phase_index = i;
     std::unique_ptr<OptimizationPolicy> policy
-        = makePolicyForPhase(phase_names[i], setup_context);
-    if (!policy->start()) {
-      return false;
+        = makePolicyForPhase(phase_name, setup_context);
+
+    {
+      const ProfileScope scope("init_onetime");
+      if (!policy->start()) {
+        profile.complete(false);
+        return false;
+      }
     }
     while (!policy->converged()) {
       policy->iterate();
@@ -209,7 +207,11 @@ bool Optimizer::run()
   }
 
   // Final report
-  return last_policy->finalizeAndReport(setup_context.initial_design_area);
+  const ProfileScope report_scope("final_reporting");
+  const bool result = last_policy->finalizeAndReport();
+  profile.complete(result);
+
+  return result;
 }
 
 // Single-endpoint setup repair (test/debug) - bypasses the phase pipeline.

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -11,8 +12,10 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "OptimizationPolicyConfig.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 
@@ -46,7 +49,6 @@ namespace rsz {
 // Message IDs shared across multiple call sites
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
-inline constexpr int kMsgPolicyCommittedMoves = 2023;
 
 enum class FailReason : uint8_t
 {
@@ -357,6 +359,10 @@ struct Estimate
 {
   bool legal{false};
   float score{0.0f};
+  // Unscaled arrival_impr in seconds; absent if estimation did not complete.
+  std::optional<float> raw_gain{};
+  // Non-owning static label from failReasonName(), "min_score", or "max_cap".
+  std::string_view reason{};
 };
 
 // Result of applying one candidate ECO (MoveCandidate::apply()).  The
@@ -427,29 +433,13 @@ struct OptimizerRunConfig
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
+  // Setup repair profiler: 0 off, 1 timing samples, 2 adds the batch and
+  // pass events.  Files go to profile_dir, or "repair_setup_profile" when
+  // empty, with one run_N per call.
+  int profile_mode{0};
+  std::string profile_dir;
   std::vector<MoveType> sequence;
   std::string phases;
-};
-
-// Policy-to-generator configuration channel for tunable knobs that do not
-// belong in the OptimizerRunConfig.
-struct OptimizationPolicyConfig
-{
-  // Cap on how many per-target candidates a generator expands. A value of 0
-  // means unlimited.
-  int max_candidate_generation{0};
-
-  // Experimental. Hard cap on accepted moves for policies that support bounded
-  // commits. A value of 0 means unlimited.
-  int max_committed_moves{0};
-
-  // Number of timing stages to include before and after the target stage in MT
-  // delay estimation. 0 preserves target-stage-only scoring.
-  int delay_estimation_levels{0};
-
-  // Experimental. Enable load-dependent STA output-slew bias sampling for
-  // the fanin neighbor stage in MT delay estimation.
-  bool delay_estimator_sta_slew_bias{false};
 };
 
 // === Move type labels ======================================================

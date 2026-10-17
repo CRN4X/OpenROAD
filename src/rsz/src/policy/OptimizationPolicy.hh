@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
+#include "ProgressReporter.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 
@@ -80,7 +81,7 @@ class OptimizationPolicy
 
   bool converged() const { return converged_; }
   bool result() const { return result_; }
-  bool finalizeAndReport(double initial_design_area);
+  bool finalizeAndReport();
 
  protected:
   // === Generator setup ======================================================
@@ -94,7 +95,6 @@ class OptimizationPolicy
   // Main-thread prewarm stage: populate shared Resizer/dbNetwork lazy caches
   // before MT workers call generator code that reads those services.
   virtual void prewarmTargets(const std::vector<Target>& targets) const;
-  virtual bool targetPrewarmEnabled() const;
   virtual bool generatorEnabled(MoveType type) const;
 
   // Main-thread prepare stage: capture per-target STA state before MT workers
@@ -119,21 +119,14 @@ class OptimizationPolicy
   // === Run lifecycle helpers ===============================================
   bool hasSetupViolations(const OptimizerRunConfig& config,
                           const sta::MinMax* max) const;
-  sta::Slack totalNegativeSlack(const sta::MinMax* max) const;
+  // TNS of what the run repairs: the path group's under -path_group.
+  sta::Slack totalNegativeSlack() const;
   void prewarmStaForPrepareStage() const;
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
   // Only startpoint-oriented policies opt in to StTNS progress reporting.
   virtual bool showStartpointMetrics() const { return false; }
-  void printProgressHeader() const;
-  void printFinalProgress(const RepairTargetCollector& target_collector,
-                          double initial_design_area) const;
   virtual const std::vector<const sta::Pin*>& finalReportPins() const;
   bool reportRepairSummary() const;
-  // Load every policy-tunable envar into policy_config_ once at start time.
-  // Each subclass reads only the fields it actually consumes from
-  // policy_config_; loading unused fields is harmless.
-  void loadPolicyEnvars();
-
   // Reset run state at the beginning of start(); call once per run.
   void resetRun()
   {
@@ -164,6 +157,8 @@ class OptimizationPolicy
   const sta::MinMax* max_{nullptr};
   OptimizationPolicyConfig policy_config_{};
   RepairTargetCollector* target_collector_;
+  // The progress table shared by every policy.
+  ProgressReporter progress_;
   GeneratorVector move_generators_;
   std::vector<MoveType> move_sequence_;
   std::unique_ptr<utl::ThreadPool> thread_pool_;

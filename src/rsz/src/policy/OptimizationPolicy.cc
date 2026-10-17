@@ -4,8 +4,6 @@
 #include "OptimizationPolicy.hh"
 
 #include <algorithm>
-#include <cmath>
-#include <limits>
 #include <memory>
 #include <unordered_set>
 #include <utility>
@@ -18,6 +16,7 @@
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "RerouteGenerator.hh"
 #include "SizeDownFanoutGenerator.hh"
@@ -40,8 +39,6 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
-#include "utl/env.h"
-#include "utl/mem_stats.h"
 
 namespace rsz {
 
@@ -79,7 +76,8 @@ OptimizationPolicy::OptimizationPolicy(Resizer& resizer,
       committer_(committer),
       setup_context_(setup_context),
       config_(config),
-      target_collector_(&setup_context_.target_collector)
+      target_collector_(&setup_context_.target_collector),
+      progress_(resizer, committer, setup_context)
 {
 }
 
@@ -101,7 +99,6 @@ bool OptimizationPolicy::start()
   // between two legacy-derived phases would otherwise leave the later
   // phase printing the pre-sizing area. One area walk per phase.
   setup_context_.progress_area_at_edit = -1;
-  loadPolicyEnvars();
   if (is_experimental) {
     logger_->warn(utl::RSZ,
                   2024,
@@ -112,101 +109,15 @@ bool OptimizationPolicy::start()
   return true;
 }
 
-bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
+bool OptimizationPolicy::finalizeAndReport()
 {
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
                      setup_context_.progress_header_show_startpoint_metrics);
   setup_context_.final_wns = final_targets.getWns();
-  printFinalProgress(final_targets, initial_design_area);
+  progress_.printFinal(final_targets, showStartpointMetrics());
   committer_.printTrackerFinalReports(finalReportPins());
   return reportRepairSummary();
-}
-
-void OptimizationPolicy::printProgressHeader() const
-{
-  const bool show_startpoint_metrics = showStartpointMetrics();
-  if (setup_context_.progress_header_printed
-      && setup_context_.progress_header_show_startpoint_metrics
-             == show_startpoint_metrics) {
-    return;
-  }
-  setup_context_.progress_header_printed = true;
-  setup_context_.progress_header_show_startpoint_metrics
-      = show_startpoint_metrics;
-  if (show_startpoint_metrics) {
-    logger_->report(
-        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "   Area   |    WNS   |   StTNS    |    TNS     |  Viol  |  Worst");
-    logger_->report(
-        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |          |            |            | Endpts | St/EnPt");
-  } else {
-    logger_->report(
-        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "   Area   |    WNS   |    TNS     |  Viol  |  Worst");
-    logger_->report(
-        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |          |            | Endpts | Endpoint");
-  }
-  logger_->report(
-      "---------------------------------------------------------------"
-      "---------------------------------------------------------------");
-}
-
-void OptimizationPolicy::printFinalProgress(
-    const RepairTargetCollector& target_collector,
-    const double initial_design_area) const
-{
-  if (!setup_context_.progress_header_printed) {
-    printProgressHeader();
-  }
-
-  const sta::Slack wns = setup_context_.final_wns;
-  const sta::Slack en_tns = target_collector.getTns(false);
-  const sta::Pin* worst_pin = target_collector.getWorstPin(false);
-
-  const double design_area = resizer_.computeDesignArea();
-  const double area_growth = design_area - initial_design_area;
-  double area_growth_percent = std::numeric_limits<double>::infinity();
-  if (std::abs(initial_design_area) > 0.0) {
-    area_growth_percent = area_growth / initial_design_area * 100.0;
-  }
-
-  const std::string progress_prefix = fmt::format(
-      "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
-      "| {: >+7.1f}% | {: >8s}",
-      "final",
-      committer_.totalMoves(MoveType::kUnbuffer),
-      committer_.totalMoves(MoveType::kSizeUp)
-          + committer_.totalMoves(MoveType::kSizeDownFanout)
-          + committer_.totalMoves(MoveType::kSizeUpMatch)
-          + committer_.totalMoves(MoveType::kVtSwap),
-      committer_.totalMoves(MoveType::kBuffer)
-          + committer_.totalMoves(MoveType::kSplitLoad),
-      committer_.totalMoves(MoveType::kClone),
-      committer_.totalMoves(MoveType::kSwapPins),
-      area_growth_percent,
-      sta::delayAsString(wns, 3, sta_));
-
-  const std::string startpoint_tns_field
-      = setup_context_.progress_header_show_startpoint_metrics
-            ? fmt::format(
-                  " | {: >10s}",
-                  sta::delayAsString(target_collector.getTns(true), 1, sta_))
-            : "";
-
-  logger_->report("{}{} | {: >10s} | {: >6d} | {}",
-                  progress_prefix,
-                  startpoint_tns_field,
-                  sta::delayAsString(en_tns, 1, sta_),
-                  std::max(0, target_collector.getNumViolatingEndpoints()),
-                  worst_pin != nullptr ? network_->pathName(worst_pin) : "");
-
-  debugPrint(logger_, utl::RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
-  logger_->report(
-      "---------------------------------------------------------------"
-      "---------------------------------------------------------------");
 }
 
 const std::vector<const sta::Pin*>& OptimizationPolicy::finalReportPins() const
@@ -216,6 +127,7 @@ const std::vector<const sta::Pin*>& OptimizationPolicy::finalReportPins() const
 
 bool OptimizationPolicy::reportRepairSummary() const
 {
+  const ProfileScope profile("reporting");
   bool repaired = false;
 
   const int buffer_moves = committer_.summaryCommittedMoves(MoveType::kBuffer);
@@ -302,25 +214,6 @@ bool OptimizationPolicy::reportRepairSummary() const
   return repaired;
 }
 
-void OptimizationPolicy::loadPolicyEnvars()
-{
-  // VtSwap candidate cap (per target, per generator); 0 means unlimited.
-  policy_config_.max_candidate_generation
-      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_CANDIDATES", 0);
-  // Hard cap on accepted moves; 0 means unlimited (per OptimizationPolicyConfig
-  // docs).
-  policy_config_.max_committed_moves
-      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_MAX_MOVES", 0);
-  // Number of fanin/fanout stages included in MT delay estimation; 0 keeps
-  // target-stage-only scoring.
-  policy_config_.delay_estimation_levels
-      = utl::readEnvarInt("RSZ_MT_DELAY_LEVELS", 1);
-  // Experimental STA slew-bias sampling. Negative values are treated the same
-  // as 0.
-  policy_config_.delay_estimator_sta_slew_bias
-      = utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 1) > 0;
-}
-
 GeneratorContext OptimizationPolicy::makeGeneratorContext() const
 {
   return GeneratorContext{.resizer = resizer_,
@@ -405,6 +298,8 @@ MoveGenerator* OptimizationPolicy::findGenerator(const MoveType type) const
 
 void OptimizationPolicy::prepareTargets(std::vector<Target>& targets) const
 {
+  const ProfileScope profile("prepare");
+  RepairSetupProfiler::event("targets_prepared", targets.size());
   const PrepareCacheMask mask = accumulatePrepareRequirements();
   for (Target& target : targets) {
     prepareTarget(target, mask);
@@ -413,6 +308,8 @@ void OptimizationPolicy::prepareTargets(std::vector<Target>& targets) const
 
 Target OptimizationPolicy::prepareTarget(const Target& target) const
 {
+  const ProfileScope profile("prepare");
+  RepairSetupProfiler::event("targets_prepared");
   Target prepared_target = target;
   prepareTarget(prepared_target, accumulatePrepareRequirements());
   return prepared_target;
@@ -421,6 +318,7 @@ Target OptimizationPolicy::prepareTarget(const Target& target) const
 void OptimizationPolicy::prewarmTargets(
     const std::vector<Target>& targets) const
 {
+  const ProfileScope profile("prepare");
   const bool prewarm_swappable_cells
       = findGenerator(MoveType::kSizeUp) != nullptr;
   const bool prewarm_vt_equiv_cells
@@ -430,11 +328,6 @@ void OptimizationPolicy::prewarmTargets(
   if (prewarm_swappable_cells || prewarm_vt_equiv_cells) {
     prewarmTargetDriverCaches(targets);
   }
-}
-
-bool OptimizationPolicy::targetPrewarmEnabled() const
-{
-  return false;
 }
 
 bool OptimizationPolicy::generatorEnabled(const MoveType) const
@@ -457,12 +350,12 @@ void OptimizationPolicy::prepareArcDelayState(Target& target) const
   }
 
   FailReason fail_reason = FailReason::kNone;
-  target.arc_delay = DelayEstimator::buildContext(
-      resizer_,
-      target,
-      policy_config_.delay_estimation_levels,
-      &fail_reason,
-      policy_config_.delay_estimator_sta_slew_bias);
+  target.arc_delay
+      = DelayEstimator::buildContext(resizer_,
+                                     target,
+                                     policy_config_.delay_estimation_levels,
+                                     &fail_reason,
+                                     policy_config_.sta_slew_bias);
 }
 
 void OptimizationPolicy::prewarmTargetLibertyCaches(
@@ -520,13 +413,15 @@ void OptimizationPolicy::prewarmTargetLibertyCaches(
 bool OptimizationPolicy::hasSetupViolations(const OptimizerRunConfig& config,
                                             const sta::MinMax* max) const
 {
+  const ProfileScope profile("qor_collection");
   return sta::fuzzyLess(resizer_.sta()->worstSlack(max),
                         config.setup_slack_margin);
 }
 
-sta::Slack OptimizationPolicy::totalNegativeSlack(const sta::MinMax* max) const
+sta::Slack OptimizationPolicy::totalNegativeSlack() const
 {
-  return resizer_.sta()->totalNegativeSlack(max);
+  const ProfileScope profile("qor_collection");
+  return target_collector_->totalNegativeSlack();
 }
 
 void OptimizationPolicy::prewarmTargetDriverCaches(
